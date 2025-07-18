@@ -9,7 +9,6 @@ import {
   Alert,
   Link,
 } from '@mui/material';
-import { AgricultureOutlined } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -149,261 +148,327 @@ const ForgotPasswordPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: 3,
+        width: '100vw',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth='sm'>
-        <Paper
-          elevation={10}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          {/* Logo and Title */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 80,
-                height: 80,
-                backgroundColor: '#4caf50',
-                borderRadius: '50%',
-                mb: 2,
-              }}
-            >
-              <AgricultureOutlined sx={{ fontSize: 40, color: 'white' }} />
-            </Box>
-            <Typography
-              variant='h4'
-              component='h1'
-              sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1 }}
-            >
-              Reset Password
-            </Typography>
-            <Typography variant='body1' sx={{ color: 'text.secondary', mb: 2 }}>
-              {step === 1
-                ? 'Enter your email address to begin password reset.'
-                : step === 2
-                  ? 'Enter your 4-digit PIN to verify your identity.'
-                  : 'Enter your new password below.'}
-            </Typography>
-          </Box>
-
-          {/* Error/Success Alert */}
-          {error && (
-            <Alert severity='error' sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert severity='success' sx={{ mb: 3 }}>
-              {success}
-            </Alert>
-          )}
-
-          {/* Step 1: Email Entry */}
-          {step === 1 && (
-            <Box
-              component='form'
-              onSubmit={handleEmailSubmit}
-              sx={{ width: '100%' }}
-            >
-              <TextField
-                fullWidth
-                label='Email Address'
-                name='email'
-                type='email'
-                value={email}
-                onChange={handleEmailChange}
-                required
-                sx={{ mb: 3 }}
-                placeholder='Enter your registered email address'
-              />
-              <Button
-                type='submit'
-                fullWidth
-                variant='contained'
-                size='large'
-                disabled={loading}
+      {/* Background Image */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${require('../assets/background.png')})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(0.5px) brightness(0.95)',
+          zIndex: 2,
+        }}
+      />
+      {/* Green Overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background:
+            'linear-gradient(180deg, rgba(33,65,0,0.85) 0%, rgba(33,65,0,0.5) 60%, rgba(33,65,0,0) 100%)',
+          opacity: 1,
+          zIndex: 1,
+        }}
+      />
+      {/* Content */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 3,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 3,
+        }}
+      >
+        <Container maxWidth='sm'>
+          <Paper
+            elevation={10}
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            {/* Logo and Title */}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Box
                 sx={{
-                  backgroundColor: '#4caf50',
-                  py: 1.5,
-                  fontSize: '1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
+                }}
+              >
+                <img
+                  src={require('../assets/soloLogo.png')}
+                  alt='AgroConnect Logo'
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 120,
+                    height: 'auto',
+                    width: 'auto',
+                    display: 'block',
+                  }}
+                />
+              </Box>
+              <Typography
+                variant='h4'
+                component='h1'
+                sx={{
                   fontWeight: 'bold',
-                  mb: 3,
+                  color: '#2e7d32',
+                  mb: 1,
+                  fontFamily: 'Rubik, sans-serif',
+                }}
+              >
+                Reset Password
+              </Typography>
+              <Typography
+                variant='body1'
+                sx={{
+                  color: 'text.secondary',
+                  mb: 2,
+                  fontFamily: 'Nunito, sans-serif',
+                }}
+              >
+                {step === 1
+                  ? 'Enter your email address to begin password reset.'
+                  : step === 2
+                    ? 'Enter your 4-digit PIN to verify your identity.'
+                    : 'Enter your new password below.'}
+              </Typography>
+            </Box>
+
+            {/* Error/Success Alert */}
+            {error && (
+              <Alert severity='error' sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+            {success && (
+              <Alert severity='success' sx={{ mb: 3 }}>
+                {success}
+              </Alert>
+            )}
+
+            {/* Step 1: Email Entry */}
+            {step === 1 && (
+              <Box
+                component='form'
+                onSubmit={handleEmailSubmit}
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  fullWidth
+                  label='Email Address'
+                  name='email'
+                  type='email'
+                  value={email}
+                  onChange={handleEmailChange}
+                  required
+                  sx={{ mb: 3 }}
+                  placeholder='Enter your registered email address'
+                />
+                <Button
+                  type='submit'
+                  fullWidth
+                  variant='contained'
+                  size='large'
+                  disabled={loading}
+                  sx={{
+                    backgroundColor: '#4caf50',
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    mb: 3,
+                    '&:hover': {
+                      backgroundColor: '#45a049',
+                    },
+                  }}
+                >
+                  {loading ? 'Checking...' : 'Next'}
+                </Button>
+              </Box>
+            )}
+
+            {/* Step 2: PIN Entry */}
+            {step === 2 && (
+              <Box
+                component='form'
+                onSubmit={handlePinSubmit}
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  fullWidth
+                  label='4-digit PIN'
+                  name='pin'
+                  type='text'
+                  value={pin}
+                  onChange={handlePinChange}
+                  required
+                  sx={{ mb: 3 }}
+                  inputProps={{
+                    maxLength: 4,
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                  }}
+                  placeholder='Enter your 4-digit PIN'
+                />
+                <Button
+                  type='submit'
+                  fullWidth
+                  variant='contained'
+                  size='large'
+                  disabled={loading}
+                  sx={{
+                    backgroundColor: '#4caf50',
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    mb: 3,
+                    '&:hover': {
+                      backgroundColor: '#45a049',
+                    },
+                  }}
+                >
+                  {loading ? 'Verifying...' : 'Verify PIN'}
+                </Button>
+              </Box>
+            )}
+
+            {/* Step 3: New Password Entry */}
+            {step === 3 && (
+              <Box
+                component='form'
+                onSubmit={handlePasswordSubmit}
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  fullWidth
+                  label='New Password'
+                  name='newPassword'
+                  type='password'
+                  value={newPassword}
+                  onChange={handlePasswordChange}
+                  required
+                  sx={{ mb: 3 }}
+                  placeholder='Enter your new password'
+                />
+                <TextField
+                  fullWidth
+                  label='Confirm New Password'
+                  name='confirmPassword'
+                  type='password'
+                  value={confirmPassword}
+                  onChange={handleConfirmPasswordChange}
+                  required
+                  sx={{ mb: 3 }}
+                  placeholder='Confirm your new password'
+                />
+                <Button
+                  type='submit'
+                  fullWidth
+                  variant='contained'
+                  size='large'
+                  disabled={loading}
+                  sx={{
+                    backgroundColor: '#4caf50',
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    mb: 3,
+                    '&:hover': {
+                      backgroundColor: '#45a049',
+                    },
+                  }}
+                >
+                  {loading ? 'Resetting...' : 'Reset Password'}
+                </Button>
+              </Box>
+            )}
+
+            {/* Links */}
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant='body2'
+                sx={{ mb: 2, fontFamily: 'Nunito, sans-serif' }}
+              >
+                Remember your password?{' '}
+                <Link
+                  component='button'
+                  type='button'
+                  onClick={() => navigate('/login')}
+                  sx={{
+                    color: '#4caf50',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                >
+                  Sign In
+                </Link>
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{ fontFamily: 'Nunito, sans-serif' }}
+              >
+                Don't have an account?{' '}
+                <Link
+                  component='button'
+                  type='button'
+                  onClick={() => navigate('/signup')}
+                  sx={{
+                    color: '#4caf50',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                >
+                  Sign Up
+                </Link>
+              </Typography>
+            </Box>
+
+            {/* Back to Landing */}
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Button
+                variant='text'
+                onClick={() => navigate('/')}
+                sx={{
+                  color: '#666',
+                  textTransform: 'none',
                   '&:hover': {
-                    backgroundColor: '#45a049',
+                    backgroundColor: 'rgba(0,0,0,0.04)',
                   },
                 }}
               >
-                {loading ? 'Checking...' : 'Next'}
+                ← Back to Home
               </Button>
             </Box>
-          )}
-
-          {/* Step 2: PIN Entry */}
-          {step === 2 && (
-            <Box
-              component='form'
-              onSubmit={handlePinSubmit}
-              sx={{ width: '100%' }}
-            >
-              <TextField
-                fullWidth
-                label='4-digit PIN'
-                name='pin'
-                type='text'
-                value={pin}
-                onChange={handlePinChange}
-                required
-                sx={{ mb: 3 }}
-                inputProps={{
-                  maxLength: 4,
-                  inputMode: 'numeric',
-                  pattern: '[0-9]*',
-                }}
-                placeholder='Enter your 4-digit PIN'
-              />
-              <Button
-                type='submit'
-                fullWidth
-                variant='contained'
-                size='large'
-                disabled={loading}
-                sx={{
-                  backgroundColor: '#4caf50',
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  mb: 3,
-                  '&:hover': {
-                    backgroundColor: '#45a049',
-                  },
-                }}
-              >
-                {loading ? 'Verifying...' : 'Verify PIN'}
-              </Button>
-            </Box>
-          )}
-
-          {/* Step 3: New Password Entry */}
-          {step === 3 && (
-            <Box
-              component='form'
-              onSubmit={handlePasswordSubmit}
-              sx={{ width: '100%' }}
-            >
-              <TextField
-                fullWidth
-                label='New Password'
-                name='newPassword'
-                type='password'
-                value={newPassword}
-                onChange={handlePasswordChange}
-                required
-                sx={{ mb: 3 }}
-                placeholder='Enter your new password'
-              />
-              <TextField
-                fullWidth
-                label='Confirm New Password'
-                name='confirmPassword'
-                type='password'
-                value={confirmPassword}
-                onChange={handleConfirmPasswordChange}
-                required
-                sx={{ mb: 3 }}
-                placeholder='Confirm your new password'
-              />
-              <Button
-                type='submit'
-                fullWidth
-                variant='contained'
-                size='large'
-                disabled={loading}
-                sx={{
-                  backgroundColor: '#4caf50',
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  mb: 3,
-                  '&:hover': {
-                    backgroundColor: '#45a049',
-                  },
-                }}
-              >
-                {loading ? 'Resetting...' : 'Reset Password'}
-              </Button>
-            </Box>
-          )}
-
-          {/* Links */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant='body2' sx={{ mb: 2 }}>
-              Remember your password?{' '}
-              <Link
-                component='button'
-                type='button'
-                onClick={() => navigate('/login')}
-                sx={{
-                  color: '#4caf50',
-                  fontWeight: 'bold',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Sign In
-              </Link>
-            </Typography>
-            <Typography variant='body2'>
-              Don't have an account?{' '}
-              <Link
-                component='button'
-                type='button'
-                onClick={() => navigate('/signup')}
-                sx={{
-                  color: '#4caf50',
-                  fontWeight: 'bold',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Sign Up
-              </Link>
-            </Typography>
-          </Box>
-
-          {/* Back to Landing */}
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
-            <Button
-              variant='text'
-              onClick={() => navigate('/')}
-              sx={{
-                color: '#666',
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.04)',
-                },
-              }}
-            >
-              ← Back to Home
-            </Button>
-          </Box>
-        </Paper>
-      </Container>
+          </Paper>
+        </Container>
+      </Box>
     </Box>
   );
 };

@@ -58,17 +58,25 @@ const LandingPage: React.FC = () => {
       >
         {/* Logo */}
         <Box sx={{ position: 'fixed', top: 0, left: 0, m: 1, zIndex: 10 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: { xs: 120, sm: 180, md: 260, lg: 340, xl: 440 },
+              minWidth: { xs: 80, sm: 120, md: 180, lg: 220, xl: 220 },
+              maxWidth: '30vw',
+              height: 'auto',
+            }}
+          >
             <img
               src={logo}
               alt='Logo'
               style={{
-                width: 440,
-                minWidth: 220,
-                maxWidth: '30vw',
+                width: '100%',
                 height: 'auto',
                 marginRight: 10,
                 borderRadius: 0,
+                display: 'block',
               }}
             />
           </Box>
@@ -114,6 +122,7 @@ const LandingPage: React.FC = () => {
                   textTransform: 'uppercase',
                   fontSize: 'clamp(1.5rem, 4vw, 3.5rem)',
                   fontFamily: 'Rubik, sans-serif',
+                  mt: { xs: 10, sm: 6, md: 2, lg: 0 },
                 }}
               >
                 Cultivate Success: Grow Your Farm, Grow Your Knowledge.
