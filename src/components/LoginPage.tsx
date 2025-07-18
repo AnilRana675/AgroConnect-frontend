@@ -151,6 +151,7 @@ const LoginPage: React.FC = () => {
               onChange={handleChange}
               required
               sx={{ mb: 3 }}
+              placeholder='Enter your email'
               InputProps={{
                 startAdornment: (
                   <InputAdornment position='start'>
@@ -169,6 +170,7 @@ const LoginPage: React.FC = () => {
               onChange={handleChange}
               required
               sx={{ mb: 3 }}
+              placeholder='Enter your password'
               InputProps={{
                 startAdornment: (
                   <InputAdornment position='start'>
@@ -210,7 +212,7 @@ const LoginPage: React.FC = () => {
               fullWidth
               variant='outlined'
               size='large'
-              onClick={() => navigate('/user')}
+              onClick={() => navigate('/')}
               sx={{
                 borderColor: '#4caf50',
                 color: '#4caf50',
@@ -224,7 +226,7 @@ const LoginPage: React.FC = () => {
                 },
               }}
             >
-              Demo Login (Skip Authentication)
+              Cancel
             </Button>
 
             {/* Links */}
