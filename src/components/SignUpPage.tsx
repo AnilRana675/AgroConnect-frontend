@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -22,6 +22,28 @@ import {
 
 const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        console.log('Checking session...');
+        const response = await axios.get(
+          'http://localhost:3001/api/auth/check-session',
+          { withCredentials: true },
+        );
+        console.log('Session response:', response.data);
+        if (response.data && response.data.loggedIn) {
+          navigate('/user');
+        } else {
+          // Not logged in, stay on signup
+          console.log('Not logged in, stay on signup');
+        }
+      } catch (err) {
+        // Error or no response, stay on signup
+        console.log('Session check error or no response:', err);
+      }
+    };
+    checkSession();
+  }, [navigate]);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -34,8 +56,6 @@ const SignUpPage: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    pin: '',
-    confirmPin: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -129,25 +149,11 @@ const SignUpPage: React.FC = () => {
           return;
         }
         break;
-      case 7:
-        if (!formData.pin || !formData.confirmPin) {
-          setError('Please enter and confirm your 4-digit PIN.');
-          return;
-        }
-        if (formData.pin !== formData.confirmPin) {
-          setError('PINs do not match.');
-          return;
-        }
-        if (!/^[0-9]{4}$/.test(formData.pin)) {
-          setError('PIN must be exactly 4 digits.');
-          return;
-        }
-        break;
       default:
         break;
     }
     setError('');
-    setStep(prev => prev + 1);
+    if (step < 7) setStep(prev => prev + 1);
   };
 
   const handlePrev = () => {
@@ -169,12 +175,11 @@ const SignUpPage: React.FC = () => {
           middleName: formData.middleName,
           lastName: formData.lastName,
           province: formData.province,
-          location: formData.location,
+          district: formData.location, // changed from location to district
           farmerType: formData.farmerType,
           economicScale: formData.economicScale,
           email: formData.email,
           password: formData.password,
-          pin: formData.pin,
         },
       );
       if (response.data.success) {
@@ -527,60 +532,6 @@ const SignUpPage: React.FC = () => {
                   />
                 </>
               )}
-              {step === 7 && (
-                <>
-                  <Typography
-                    variant='h6'
-                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
-                  >
-                    Create a 4-digit PIN (for password reset)
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label='4-digit PIN'
-                    name='pin'
-                    type='password'
-                    value={formData.pin}
-                    onChange={handleChange}
-                    required
-                    sx={{ mb: 3 }}
-                    inputProps={{
-                      maxLength: 4,
-                      inputMode: 'numeric',
-                      pattern: '[0-9]*',
-                    }}
-                    placeholder='Enter a 4-digit PIN'
-                  />
-                  <TextField
-                    fullWidth
-                    label='Confirm 4-digit PIN'
-                    name='confirmPin'
-                    type='password'
-                    value={formData.confirmPin}
-                    onChange={handleChange}
-                    required
-                    sx={{ mb: 3 }}
-                    inputProps={{
-                      maxLength: 4,
-                      inputMode: 'numeric',
-                      pattern: '[0-9]*',
-                    }}
-                    placeholder='Re-enter your 4-digit PIN'
-                  />
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      mb: 3,
-                      color: 'text.secondary',
-                      textAlign: 'center',
-                      fontFamily: 'Nunito, sans-serif',
-                    }}
-                  >
-                    Please remember this PIN. You will need it to reset your
-                    password if you forget it.
-                  </Typography>
-                </>
-              )}
               <Box
                 sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}
               >
@@ -614,7 +565,7 @@ const SignUpPage: React.FC = () => {
             <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Typography
                 variant='body2'
-                sx={{ fontFamily: 'Nunito, sans-serif' }}
+                sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
               >
                 Already have an account?{' '}
                 <Link
@@ -634,6 +585,51 @@ const SignUpPage: React.FC = () => {
                   Sign In
                 </Link>
               </Typography>
+              <Typography
+                variant='body2'
+                sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
+              >
+                <Link
+                  component='button'
+                  type='button'
+                  onClick={() => navigate('/forgot-password')}
+                  sx={{
+                    color: '#4caf50',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                >
+                  Forgot Password?
+                </Link>
+              </Typography>
+              <Button
+                variant='contained'
+                onClick={() => navigate('/')}
+                sx={{
+                  backgroundColor: '#43A047',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px 0 rgba(67,160,71,0.15)',
+                  border: '2px solid #388E3C',
+                  mt: 2,
+                  textTransform: 'none',
+                  fontFamily: 'Nunito, sans-serif',
+                  '&:hover': {
+                    backgroundColor: '#388E3C',
+                    boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+                  },
+                }}
+              >
+                ← Back to Home
+              </Button>
             </Box>
           </Paper>
         </Container>

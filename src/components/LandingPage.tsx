@@ -172,7 +172,7 @@ const LandingPage: React.FC = () => {
                     boxShadow: '0 6px 24px 0 rgba(67,160,71,0.35)',
                   },
                 }}
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/signup')}
                 onMouseEnter={() => setIsButtonHovered(true)}
                 onMouseLeave={() => setIsButtonHovered(false)}
               >
