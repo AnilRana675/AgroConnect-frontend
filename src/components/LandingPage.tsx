@@ -1,287 +1,223 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Container,
-  Card,
-  CardContent,
-} from '@mui/material';
-import {
-  AgricultureOutlined,
-  ShoppingCart,
-  TrendingUp,
-  People,
-} from '@mui/icons-material';
+import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-
+import backImg from '../assets/background.png';
+import farmerImg from '../assets/farmer.png';
+import logo from '../assets/agroSIDE.png';
+// TODO: Replace this with your own background image asset if desired
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-
-  const features = [
-    {
-      icon: <AgricultureOutlined sx={{ fontSize: 40 }} />,
-      title: 'Farm Management',
-      description:
-        'Track your crops, livestock, and farming activities with ease.',
-    },
-    {
-      icon: <ShoppingCart sx={{ fontSize: 40 }} />,
-      title: 'Marketplace',
-      description: 'Buy and sell agricultural products directly with farmers.',
-    },
-    {
-      icon: <TrendingUp sx={{ fontSize: 40 }} />,
-      title: 'Market Insights',
-      description:
-        'Get real-time market prices and trends for better decisions.',
-    },
-    {
-      icon: <People sx={{ fontSize: 40 }} />,
-      title: 'Community',
-      description: 'Connect with other farmers and agricultural experts.',
-    },
-  ];
-
+  const [isButtonHovered, setIsButtonHovered] = React.useState(false);
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {/* Hero Section */}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100vw',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Background Image - You can replace the URL in backgroundImage with your own asset */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-          color: 'white',
-          py: 8,
-          minHeight: '70vh',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${backImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(0.5px) brightness(0.95)',
+          zIndex: 2,
+        }}
+      />
+      {/* Green Overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background:
+            'linear-gradient(180deg, rgba(33,65,0,0.85) 0%, rgba(33,65,0,0.5) 60%, rgba(33,65,0,0) 100%)',
+          opacity: 1,
+          zIndex: 1,
+        }}
+      />
+      {/* Content */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 3,
+          height: '100vh',
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
         }}
       >
-        <Container maxWidth='lg'>
+        {/* Logo */}
+        <Box sx={{ position: 'fixed', top: 0, left: 0, m: 1, zIndex: 10 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src={logo}
+              alt='Logo'
+              style={{
+                width: 440,
+                minWidth: 220,
+                maxWidth: '30vw',
+                height: 'auto',
+                marginRight: 10,
+                borderRadius: 0,
+              }}
+            />
+          </Box>
+        </Box>
+        {/* Main Content */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: { xs: 2, md: 8 },
+          }}
+        >
           <Box
             sx={{
+              width: '100%',
+              maxWidth: 1200,
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 4,
             }}
           >
-            <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
-              <Typography
-                variant='h1'
-                component='h1'
-                sx={{
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
-                  fontWeight: 'bold',
-                  mb: 2,
-                }}
-              >
-                AgroConnect
-              </Typography>
-              <Typography
-                variant='h5'
-                component='p'
-                sx={{
-                  fontSize: { xs: '1.2rem', md: '1.5rem' },
-                  mb: 4,
-                  opacity: 0.9,
-                }}
-              >
-                Connecting Farmers to Markets, Technology, and Community
-              </Typography>
-              <Typography
-                variant='body1'
-                sx={{
-                  fontSize: '1.1rem',
-                  mb: 4,
-                  opacity: 0.8,
-                  lineHeight: 1.6,
-                }}
-              >
-                Join thousands of farmers who are transforming their
-                agricultural practices with our comprehensive platform. From
-                farm management to market access, we've got you covered.
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: { xs: 'center', md: 'flex-start' },
-                }}
-              >
-                <Button
-                  variant='contained'
-                  size='large'
-                  sx={{
-                    backgroundColor: 'white',
-                    color: '#2e7d32',
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#f0f0f0',
-                    },
-                  }}
-                  onClick={() => navigate('/login')}
-                >
-                  Get Started
-                </Button>
-              </Box>
-            </Box>
-            <Box sx={{ flex: 1, width: '100%' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: { xs: '300px', md: '400px' },
-                }}
-              >
-                {/* Placeholder for hero image */}
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px dashed rgba(255,255,255,0.3)',
-                  }}
-                >
-                  <Typography variant='h6' sx={{ opacity: 0.7 }}>
-                    Hero Image Placeholder
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Features Section */}
-      <Container maxWidth='lg' sx={{ py: 8 }}>
-        <Typography
-          variant='h3'
-          component='h2'
-          align='center'
-          sx={{
-            color: '#2e7d32',
-            fontWeight: 'bold',
-            mb: 6,
-          }}
-        >
-          Why Choose AgroConnect?
-        </Typography>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(4, 1fr)',
-            },
-            gap: 4,
-          }}
-        >
-          {features.map((feature, index) => (
-            <Card
-              key={index}
+            {/* Text Section */}
+            <Box
               sx={{
-                height: '100%',
+                flex: 1,
+                color: 'white',
+                textAlign: { xs: 'center', md: 'left' },
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                p: 3,
-                boxShadow: 3,
-                '&:hover': {
-                  boxShadow: 6,
-                  transform: 'translateY(-4px)',
-                  transition: 'all 0.3s ease',
-                },
+                alignItems: { xs: 'center', md: 'flex-start' },
               }}
             >
-              <Box sx={{ color: '#4caf50', mb: 2 }}>{feature.icon}</Box>
-              <CardContent sx={{ p: 0 }}>
+              <Typography
+                variant='h4'
+                sx={{
+                  fontWeight: 'bold',
+                  mb: 3,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontSize: 'clamp(1.5rem, 4vw, 3.5rem)',
+                  fontFamily: 'Rubik, sans-serif',
+                }}
+              >
+                Cultivate Success: Grow Your Farm, Grow Your Knowledge.
+              </Typography>
+              <Typography
+                variant='h6'
+                sx={{
+                  mb: 3,
+                  fontWeight: 400,
+                  lineHeight: 1.4,
+                  maxWidth: 600,
+                  mx: { xs: 'auto', md: 0 },
+                  fontSize: 'clamp(1rem, 2.5vw, 1.5rem)',
+                  fontFamily: 'Nunito, sans-serif',
+                }}
+              >
+                This platform empowers farmers with essential knowledge and
+                innovative tools. Enhance your agricultural practices, gain
+                valuable insights, and achieve better harvests. Whether you seek
+                modern techniques, market trends, or solutions to common farming
+                challenges, we're here to help you cultivate success and grow.{' '}
+                <br />
+                <b>
+                  Ready to grow? Click "<u>GET STARTED</u>" below to register.
+                </b>
+              </Typography>
+              {/* Move Get Started Button here for better flow */}
+              <Button
+                variant='contained'
+                sx={{
+                  backgroundColor: '#43A047',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1.4rem',
+                  px: 4,
+                  py: 2.2,
+                  borderRadius: 3,
+                  boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+                  border: '2px solid #388E3C',
+                  mt: 2,
+                  minWidth: 'unset',
+                  width: isButtonHovered ? 'auto' : 'auto',
+                  transition:
+                    'background 0.2s, box-shadow 0.2s, width 0.35s cubic-bezier(0.4,0,0.2,1)',
+                  '&:hover': {
+                    backgroundColor: '#388E3C',
+                    boxShadow: '0 6px 24px 0 rgba(67,160,71,0.35)',
+                  },
+                }}
+                onClick={() => navigate('/login')}
+                onMouseEnter={() => setIsButtonHovered(true)}
+                onMouseLeave={() => setIsButtonHovered(false)}
+              >
                 <Typography
-                  variant='h6'
-                  component='h3'
+                  component='span'
                   sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     fontWeight: 'bold',
-                    mb: 2,
-                    color: '#2e7d32',
+                    fontFamily: 'Rubik, sans-serif',
+                    fontSize: '2rem',
                   }}
                 >
-                  {feature.title}
+                  Get Started
+                  <span
+                    style={{
+                      marginLeft: isButtonHovered ? 16 : 0,
+                      opacity: isButtonHovered ? 1 : 0,
+                      fontSize: '1.5em',
+                      transition:
+                        'margin-left 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s cubic-bezier(0.4,0,0.2,1)',
+                      display: 'inline-block',
+                      width: isButtonHovered ? 'auto' : 0,
+                    }}
+                  >
+                    &rarr;
+                  </span>
                 </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'text.secondary',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {feature.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      </Container>
-
-      {/* CTA Section */}
-      <Box
-        sx={{
-          backgroundColor: '#2e7d32',
-          color: 'white',
-          py: 6,
-        }}
-      >
-        <Container maxWidth='lg'>
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant='h4'
-              component='h2'
+              </Button>
+            </Box>
+            {/* Farmer Illustration - Add white glow */}
+            <Box
               sx={{
-                fontWeight: 'bold',
-                mb: 2,
+                flex: 1,
+                display: 'flex',
+                justifyContent: { xs: 'center', md: 'flex-end' },
+                alignItems: 'center',
+                height: { xs: 200, md: 350 },
+                minWidth: 250,
               }}
             >
-              Ready to Transform Your Farming?
-            </Typography>
-            <Typography
-              variant='h6'
-              sx={{
-                mb: 4,
-                opacity: 0.9,
-              }}
-            >
-              Join our community of successful farmers today
-            </Typography>
-            <Button
-              variant='contained'
-              size='large'
-              sx={{
-                backgroundColor: 'white',
-                color: '#2e7d32',
-                px: 6,
-                py: 2,
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#f0f0f0',
-                },
-              }}
-              onClick={() => navigate('/login')}
-            >
-              Start Your Journey
-            </Button>
+              <img
+                src={farmerImg}
+                alt='Farmer'
+                style={{
+                  width: '100%',
+                  maxWidth: 500,
+                }}
+              />
+            </Box>
           </Box>
-        </Container>
+        </Box>
       </Box>
     </Box>
   );
 };
-
 export default LandingPage;
