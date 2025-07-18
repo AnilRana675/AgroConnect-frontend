@@ -1,14 +1,22 @@
 import React from 'react';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
+import SignUpPage from './components/SignUpPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import UserPage from './components/UserPage';
 
 function App() {
   return (
-    <div className='App'>
-      <header className='App-header'>
-        <h1>AgroConnect</h1>
-        <p>Agriculture Marketplace Platform</p>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path='/' element={<LandingPage />} />
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/signup' element={<SignUpPage />} />
+        <Route path='/forgot-password' element={<ForgotPasswordPage />} />
+        <Route path='/user' element={<UserPage />} />
+      </Routes>
+    </Router>
   );
 }
 
