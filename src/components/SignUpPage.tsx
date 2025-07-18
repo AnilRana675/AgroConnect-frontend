@@ -12,11 +12,7 @@ import {
   IconButton,
   MenuItem,
 } from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  AgricultureOutlined,
-} from '@mui/icons-material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -200,356 +196,448 @@ const SignUpPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: 3,
+        width: '100vw',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth='sm'>
-        <Paper
-          elevation={10}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          {/* Logo and Title */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 80,
-                height: 80,
-                backgroundColor: '#4caf50',
-                borderRadius: '50%',
-                mb: 2,
-              }}
-            >
-              <AgricultureOutlined sx={{ fontSize: 40, color: 'white' }} />
-            </Box>
-            <Typography
-              variant='h4'
-              component='h1'
-              sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1 }}
-            >
-              Join AgroConnect
-            </Typography>
-            <Typography variant='body1' sx={{ color: 'text.secondary', mb: 2 }}>
-              Create your account and start your farming journey
-            </Typography>
-          </Box>
-
-          {/* Error/Success Alert */}
-          {error && (
-            <Alert severity='error' sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert severity='success' sx={{ mb: 3 }}>
-              {success}
-            </Alert>
-          )}
-
-          {/* Step Form */}
-          <form onSubmit={step === 7 ? handleSubmit : e => e.preventDefault()}>
-            {step === 1 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  What is your name?
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                  <TextField
-                    fullWidth
-                    label='First Name'
-                    name='firstName'
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <TextField
-                    fullWidth
-                    label='Middle Name (optional)'
-                    name='middleName'
-                    value={formData.middleName}
-                    onChange={handleChange}
-                  />
-                  <TextField
-                    fullWidth
-                    label='Last Name'
-                    name='lastName'
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                </Box>
-              </>
-            )}
-            {step === 2 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  Which area are you located in?
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  label='Select your province'
-                  name='province'
-                  value={formData.province}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                >
-                  {Object.keys(nepalDistricts).map(province => (
-                    <MenuItem key={province} value={province}>
-                      {province}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  fullWidth
-                  label='Select your district'
-                  name='location'
-                  value={formData.location}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  disabled={!formData.province}
-                >
-                  {formData.province &&
-                    getDistrictsByProvince(formData.province).map(district => (
-                      <MenuItem key={district} value={district}>
-                        {district}
-                      </MenuItem>
-                    ))}
-                </TextField>
-              </>
-            )}
-            {step === 3 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  What type of agriculture are you primarily involved in?
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  label='Select farmer type'
-                  name='farmerType'
-                  value={formData.farmerType}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                >
-                  {farmerTypes.map(type => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </>
-            )}
-            {step === 4 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  What is the economic scale of your agriculture?
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  label='Select economic scale'
-                  name='economicScale'
-                  value={formData.economicScale}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                >
-                  {economicScales.map(scale => (
-                    <MenuItem key={scale} value={scale}>
-                      {scale}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </>
-            )}
-            {step === 5 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  What is your email address?
-                </Typography>
-                <TextField
-                  fullWidth
-                  label='Email Address'
-                  name='email'
-                  type='email'
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                />
-              </>
-            )}
-            {step === 6 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  Create a password for your account.
-                </Typography>
-                <TextField
-                  fullWidth
-                  label='Password'
-                  name='password'
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge='end'
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label='Confirm Password'
-                  name='confirmPassword'
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                          edge='end'
-                        >
-                          {showConfirmPassword ? (
-                            <VisibilityOff />
-                          ) : (
-                            <Visibility />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </>
-            )}
-            {step === 7 && (
-              <>
-                <Typography variant='h6' sx={{ mb: 2 }}>
-                  Create a 4-digit PIN (for password reset)
-                </Typography>
-                <TextField
-                  fullWidth
-                  label='4-digit PIN'
-                  name='pin'
-                  type='password'
-                  value={formData.pin}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  inputProps={{
-                    maxLength: 4,
-                    inputMode: 'numeric',
-                    pattern: '[0-9]*',
-                  }}
-                  placeholder='Enter a 4-digit PIN'
-                />
-                <TextField
-                  fullWidth
-                  label='Confirm 4-digit PIN'
-                  name='confirmPin'
-                  type='password'
-                  value={formData.confirmPin}
-                  onChange={handleChange}
-                  required
-                  sx={{ mb: 3 }}
-                  inputProps={{
-                    maxLength: 4,
-                    inputMode: 'numeric',
-                    pattern: '[0-9]*',
-                  }}
-                  placeholder='Re-enter your 4-digit PIN'
-                />
-                <Typography
-                  variant='body2'
-                  sx={{ mb: 3, color: 'text.secondary', textAlign: 'center' }}
-                >
-                  Please remember this PIN. You will need it to reset your
-                  password if you forget it.
-                </Typography>
-              </>
-            )}
-            <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}
-            >
-              {step > 1 && (
-                <Button
-                  variant='outlined'
-                  onClick={handlePrev}
-                  disabled={loading}
-                >
-                  Previous
-                </Button>
-              )}
-              {step < 7 && (
-                <Button
-                  variant='contained'
-                  onClick={handleNext}
-                  disabled={loading}
-                >
-                  Next
-                </Button>
-              )}
-              {step === 7 && (
-                <Button type='submit' variant='contained' disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Finish & Sign Up'}
-                </Button>
-              )}
-            </Box>
-          </form>
-
-          {/* Links */}
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
-            <Typography variant='body2'>
-              Already have an account?{' '}
-              <Link
-                component='button'
-                type='button'
-                onClick={() => navigate('/login')}
+      {/* Background Image */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${require('../assets/background.png')})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(0.5px) brightness(0.95)',
+          zIndex: 2,
+        }}
+      />
+      {/* Green Overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background:
+            'linear-gradient(180deg, rgba(33,65,0,0.85) 0%, rgba(33,65,0,0.5) 60%, rgba(33,65,0,0) 100%)',
+          opacity: 1,
+          zIndex: 1,
+        }}
+      />
+      {/* Content */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 3,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 3,
+        }}
+      >
+        <Container maxWidth='sm'>
+          <Paper
+            elevation={10}
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            {/* Logo and Title */}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Box
                 sx={{
-                  color: '#4caf50',
-                  fontWeight: 'bold',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
                 }}
               >
-                Sign In
-              </Link>
-            </Typography>
-          </Box>
-        </Paper>
-      </Container>
+                <img
+                  src={require('../assets/soloLogo.png')}
+                  alt='AgroConnect Logo'
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 120,
+                    height: 'auto',
+                    width: 'auto',
+                    display: 'block',
+                  }}
+                />
+              </Box>
+              <Typography
+                variant='h4'
+                component='h1'
+                sx={{
+                  fontWeight: 'bold',
+                  color: '#2e7d32',
+                  mb: 1,
+                  fontFamily: 'Rubik, sans-serif',
+                }}
+              >
+                Join AgroConnect
+              </Typography>
+              <Typography
+                variant='body1'
+                sx={{
+                  color: 'text.secondary',
+                  mb: 2,
+                  fontFamily: 'Nunito, sans-serif',
+                }}
+              >
+                Create your account and start your farming journey
+              </Typography>
+            </Box>
+
+            {/* Error/Success Alert */}
+            {error && (
+              <Alert severity='error' sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+            {success && (
+              <Alert severity='success' sx={{ mb: 3 }}>
+                {success}
+              </Alert>
+            )}
+
+            {/* Step Form */}
+            <form
+              onSubmit={step === 7 ? handleSubmit : e => e.preventDefault()}
+            >
+              {step === 1 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    What is your name?
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                    <TextField
+                      fullWidth
+                      label='First Name'
+                      name='firstName'
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                    />
+                    <TextField
+                      fullWidth
+                      label='Middle Name (optional)'
+                      name='middleName'
+                      value={formData.middleName}
+                      onChange={handleChange}
+                    />
+                    <TextField
+                      fullWidth
+                      label='Last Name'
+                      name='lastName'
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Box>
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    Which area are you located in?
+                  </Typography>
+                  <TextField
+                    select
+                    fullWidth
+                    label='Select your province'
+                    name='province'
+                    value={formData.province}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                  >
+                    {Object.keys(nepalDistricts).map(province => (
+                      <MenuItem key={province} value={province}>
+                        {province}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    select
+                    fullWidth
+                    label='Select your district'
+                    name='location'
+                    value={formData.location}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    disabled={!formData.province}
+                  >
+                    {formData.province &&
+                      getDistrictsByProvince(formData.province).map(
+                        district => (
+                          <MenuItem key={district} value={district}>
+                            {district}
+                          </MenuItem>
+                        ),
+                      )}
+                  </TextField>
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    What type of agriculture are you primarily involved in?
+                  </Typography>
+                  <TextField
+                    select
+                    fullWidth
+                    label='Select farmer type'
+                    name='farmerType'
+                    value={formData.farmerType}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                  >
+                    {farmerTypes.map(type => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </>
+              )}
+              {step === 4 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    What is the economic scale of your agriculture?
+                  </Typography>
+                  <TextField
+                    select
+                    fullWidth
+                    label='Select economic scale'
+                    name='economicScale'
+                    value={formData.economicScale}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                  >
+                    {economicScales.map(scale => (
+                      <MenuItem key={scale} value={scale}>
+                        {scale}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </>
+              )}
+              {step === 5 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    What is your email address?
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label='Email Address'
+                    name='email'
+                    type='email'
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                  />
+                </>
+              )}
+              {step === 6 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    Create a password for your account.
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label='Password'
+                    name='password'
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge='end'
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    label='Confirm Password'
+                    name='confirmPassword'
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            edge='end'
+                          >
+                            {showConfirmPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </>
+              )}
+              {step === 7 && (
+                <>
+                  <Typography
+                    variant='h6'
+                    sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
+                  >
+                    Create a 4-digit PIN (for password reset)
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label='4-digit PIN'
+                    name='pin'
+                    type='password'
+                    value={formData.pin}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    inputProps={{
+                      maxLength: 4,
+                      inputMode: 'numeric',
+                      pattern: '[0-9]*',
+                    }}
+                    placeholder='Enter a 4-digit PIN'
+                  />
+                  <TextField
+                    fullWidth
+                    label='Confirm 4-digit PIN'
+                    name='confirmPin'
+                    type='password'
+                    value={formData.confirmPin}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    inputProps={{
+                      maxLength: 4,
+                      inputMode: 'numeric',
+                      pattern: '[0-9]*',
+                    }}
+                    placeholder='Re-enter your 4-digit PIN'
+                  />
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      mb: 3,
+                      color: 'text.secondary',
+                      textAlign: 'center',
+                      fontFamily: 'Nunito, sans-serif',
+                    }}
+                  >
+                    Please remember this PIN. You will need it to reset your
+                    password if you forget it.
+                  </Typography>
+                </>
+              )}
+              <Box
+                sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}
+              >
+                {step > 1 && (
+                  <Button
+                    variant='outlined'
+                    onClick={handlePrev}
+                    disabled={loading}
+                  >
+                    Previous
+                  </Button>
+                )}
+                {step < 7 && (
+                  <Button
+                    variant='contained'
+                    onClick={handleNext}
+                    disabled={loading}
+                  >
+                    Next
+                  </Button>
+                )}
+                {step === 7 && (
+                  <Button type='submit' variant='contained' disabled={loading}>
+                    {loading ? 'Creating Account...' : 'Finish & Sign Up'}
+                  </Button>
+                )}
+              </Box>
+            </form>
+
+            {/* Links */}
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Typography
+                variant='body2'
+                sx={{ fontFamily: 'Nunito, sans-serif' }}
+              >
+                Already have an account?{' '}
+                <Link
+                  component='button'
+                  type='button'
+                  onClick={() => navigate('/login')}
+                  sx={{
+                    color: '#4caf50',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                >
+                  Sign In
+                </Link>
+              </Typography>
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
     </Box>
   );
 };
