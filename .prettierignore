@@ -11,3 +11,4 @@ coverage/
 *.min.css
 package-lock.json
 yarn.lock
+src\pages\SignUpPage.tsx

@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { authService } from '../services';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,24 +41,14 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      // Replace with your actual API endpoint
-      const response = await axios.post(
-        'http://localhost:3001/api/auth/login',
-        formData,
-      );
+      const response = await authService.login(formData);
 
-      if (response.data.success) {
-        // Store the token in localStorage
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-
+      if (response.token) {
         // Navigate to user page
         navigate('/user');
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Login failed. Please try again.',
-      );
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

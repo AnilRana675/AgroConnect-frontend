@@ -125,7 +125,7 @@ const LandingPage: React.FC = () => {
                   mt: { xs: 10, sm: 6, md: 2, lg: 0 },
                 }}
               >
-                Cultivate Success: Grow Your Farm, Grow Your Knowledge.
+                Grow Your Farm, Grow Your Knowledge.
               </Typography>
               <Typography
                 variant='h6'
@@ -140,14 +140,10 @@ const LandingPage: React.FC = () => {
                 }}
               >
                 This platform empowers farmers with essential knowledge and
-                innovative tools. Enhance your agricultural practices, gain
-                valuable insights, and achieve better harvests. Whether you seek
-                modern techniques, market trends, or solutions to common farming
-                challenges, we're here to help you cultivate success and grow.{' '}
-                <br />
-                <b>
-                  Ready to grow? Click "<u>GET STARTED</u>" below to register.
-                </b>
+                innovative tools. Gain valuable insights, and achieve better
+                harvests. Whether you seek modern techniques, market trends, or
+                solutions to common farming challenges, we're here to help you
+                cultivate success and grow. <br />
               </Typography>
               {/* Move Get Started Button here for better flow */}
               <Button
