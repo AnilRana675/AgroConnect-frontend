@@ -5,9 +5,158 @@ import backImg from '../assets/background.png';
 import farmerImg from '../assets/farmer.png';
 import logo from '../assets/agroSIDE.png';
 // TODO: Replace this with your own background image asset if desired
+
+// Helper to check login status and get user
+function getLoggedInUser() {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      return user;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [isButtonHovered, setIsButtonHovered] = React.useState(false);
+  const [user, setUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    setUser(getLoggedInUser());
+  }, []);
+
+  if (user) {
+    // User is logged in, show welcome back message
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100vw',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Background Image */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage: `url(${backImg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(0.5px) brightness(0.95)',
+            zIndex: 2,
+          }}
+        />
+        {/* Green Overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background:
+              'linear-gradient(180deg, rgba(33,65,0,0.85) 0%, rgba(33,65,0,0.5) 60%, rgba(33,65,0,0) 100%)',
+            opacity: 1,
+            zIndex: 1,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 3,
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <img
+              src={logo}
+              alt='Logo'
+              style={{
+                width: 250,
+                height: 'auto',
+                display: 'block',
+                margin: '0 auto',
+              }}
+            />
+          </Box>
+          <Typography
+            variant='h3'
+            sx={{
+              color: 'white',
+              fontWeight: 'bold',
+              fontFamily: 'Rubik, sans-serif',
+              mb: 2,
+              textAlign: 'center',
+            }}
+          >
+            Welcome back,{' '}
+            {user.personalInfo?.firstName ||
+              user.personalInfo?.name ||
+              'Farmer'}
+            !{' '}
+            <span role='img' aria-label='smile'>
+              😊
+            </span>
+          </Typography>
+          <Typography
+            variant='h5'
+            sx={{
+              color: '#b2ff59',
+              fontFamily: 'Nunito, sans-serif',
+              mb: 4,
+              textAlign: 'center',
+            }}
+          >
+            AgroConnect is waiting for you!
+          </Typography>
+          <Button
+            variant='contained'
+            sx={{
+              backgroundColor: '#43A047',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '1.4rem',
+              px: 4,
+              py: 2.2,
+              borderRadius: 3,
+              boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+              border: '2px solid #388E3C',
+              mt: 2,
+              minWidth: 'unset',
+              width: isButtonHovered ? 'auto' : 'auto',
+              transition:
+                'background 0.2s, box-shadow 0.2s, width 0.35s cubic-bezier(0.4,0,0.2,1)',
+              '&:hover': {
+                backgroundColor: '#388E3C',
+                boxShadow: '0 6px 24px 0 rgba(67,160,71,0.35)',
+              },
+            }}
+            onClick={() => navigate('/user')}
+            onMouseEnter={() => setIsButtonHovered(true)}
+            onMouseLeave={() => setIsButtonHovered(false)}
+          >
+            Go to Dashboard
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Not logged in, show the original landing page
   return (
     <Box
       sx={{
@@ -62,9 +211,9 @@ const LandingPage: React.FC = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              width: { xs: 120, sm: 180, md: 260, lg: 340, xl: 440 },
-              minWidth: { xs: 80, sm: 120, md: 180, lg: 220, xl: 220 },
-              maxWidth: '30vw',
+              width: { xs: 150, sm: 220, md: 320, lg: 420, xl: 520 },
+              minWidth: { xs: 100, sm: 150, md: 220, lg: 280, xl: 280 },
+              maxWidth: '35vw',
               height: 'auto',
             }}
           >

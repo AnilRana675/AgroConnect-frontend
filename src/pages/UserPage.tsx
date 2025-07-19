@@ -6,8 +6,11 @@ import {
   InputBase,
   IconButton,
   Button,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
+import LogoutIcon from '@mui/icons-material/Logout';
 import axios from 'axios';
 import authService from '../services/authService';
 import ReactMarkdown from 'react-markdown';
@@ -45,10 +48,16 @@ const UserPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
 
-  // Personalized messages state
+  // Personalized messages state with caching
   const [personalizedTips, setPersonalizedTips] = useState<string | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsError, setTipsError] = useState('');
+  const [lastTipsFetch, setLastTipsFetch] = useState<number | null>(null);
+
+  // Logout state
+  const [logoutAnchorEl, setLogoutAnchorEl] = useState<null | HTMLElement>(
+    null,
+  );
 
   // Fetch user profile on mount
   React.useEffect(() => {
@@ -73,6 +82,40 @@ const UserPage: React.FC = () => {
     if (storedUser && storedUser.onboardingStatus) {
       setFirstVisit(false);
     }
+  }, []);
+
+  // Load cached weekly tips on mount
+  React.useEffect(() => {
+    const loadCachedTips = () => {
+      try {
+        const cached = localStorage.getItem('agroConnect_weeklyTips');
+        if (cached) {
+          const { tips, timestamp, userId } = JSON.parse(cached);
+          const storedUser = authService.getStoredUser();
+
+          // Only use cached tips if they belong to the current user
+          if (storedUser && storedUser._id === userId) {
+            const now = Date.now();
+            const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+
+            // Check if cached tips are still valid (less than 1 week old)
+            if (now - timestamp < oneWeekInMs) {
+              setPersonalizedTips(tips);
+              setLastTipsFetch(timestamp);
+            } else {
+              // Clear expired cache
+              localStorage.removeItem('agroConnect_weeklyTips');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading cached tips:', error);
+        // Clear corrupted cache
+        localStorage.removeItem('agroConnect_weeklyTips');
+      }
+    };
+
+    loadCachedTips();
   }, []);
 
   // Handle onboarding option select
@@ -160,17 +203,67 @@ const UserPage: React.FC = () => {
   React.useEffect(() => {
     const fetchTips = async () => {
       if (selectedNav !== 'Message') return;
+
       const user = authService.getStoredUser();
       if (!user || !user._id) {
         setTipsError('User not found. Please log in again.');
         setPersonalizedTips(null);
         return;
       }
+
+      // Handle logout menu open
+      const handleLogoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setLogoutAnchorEl(event.currentTarget);
+      };
+
+      // Handle logout menu close
+      const handleLogoutMenuClose = () => {
+        setLogoutAnchorEl(null);
+      };
+
+      // Handle logout
+      const handleLogout = async () => {
+        try {
+          await authService.logout();
+          // Redirect to login page
+          window.location.href = '/login';
+        } catch (error) {
+          console.error('Logout failed:', error);
+          // Still redirect even if logout request fails
+          window.location.href = '/login';
+        }
+      };
+
+      // Check if we have cached tips and if they're still valid (less than 1 week old)
+      const now = Date.now();
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+      if (
+        personalizedTips &&
+        lastTipsFetch &&
+        now - lastTipsFetch < oneWeekInMs
+      ) {
+        // Use cached tips if they're less than a week old
+        return;
+      }
+
       setTipsLoading(true);
       setTipsError('');
       try {
         const res = await axios.get(`/api/ai/weekly-tips/${user._id}`);
-        setPersonalizedTips(res.data.data?.tips || 'No tips available.');
+        const tips = res.data.data?.tips || 'No tips available.';
+        setPersonalizedTips(tips);
+        setLastTipsFetch(now);
+
+        // Store in localStorage for persistence across sessions
+        localStorage.setItem(
+          'agroConnect_weeklyTips',
+          JSON.stringify({
+            tips,
+            timestamp: now,
+            userId: user._id,
+          }),
+        );
       } catch (err: any) {
         setTipsError(err.message || 'Failed to load personalized messages.');
         setPersonalizedTips(null);
@@ -179,7 +272,30 @@ const UserPage: React.FC = () => {
       }
     };
     fetchTips();
-  }, [selectedNav]);
+  }, [selectedNav, personalizedTips, lastTipsFetch]);
+
+  // Handle logout menu open
+  const handleLogoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setLogoutAnchorEl(event.currentTarget);
+  };
+
+  // Handle logout menu close
+  const handleLogoutMenuClose = () => {
+    setLogoutAnchorEl(null);
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      // Redirect to login page
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still redirect even if logout request fails
+      window.location.href = '/login';
+    }
+  };
 
   // Main content for each nav item
   const renderMainContent = () => {
@@ -655,8 +771,8 @@ const UserPage: React.FC = () => {
                 src={require('../assets/agroSIDE.png')}
                 alt='Logo'
                 style={{
-                  maxWidth: '90%',
-                  maxHeight: '160px',
+                  maxWidth: '95%',
+                  maxHeight: '200px',
                   height: 'auto',
                   width: 'auto',
                   display: 'block',
@@ -757,6 +873,18 @@ const UserPage: React.FC = () => {
                       {userProfile.personalInfo?.lastName}
                     </Typography>
                   </Box>
+                  <IconButton
+                    onClick={handleLogoutMenuOpen}
+                    sx={{
+                      color: '#29510A',
+                      p: 0.5,
+                      '&:hover': {
+                        backgroundColor: 'rgba(41, 81, 10, 0.1)',
+                      },
+                    }}
+                  >
+                    <LogoutIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
                 </>
               ) : null}
             </Box>
@@ -769,13 +897,48 @@ const UserPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             position: 'relative',
+            overflow: 'hidden',
+            height: '100vh',
           }}
         >
-          {renderMainContent()}
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              py: 4,
+              px: 2,
+            }}
+          >
+            {renderMainContent()}
+          </Box>
         </Box>
       </Box>
+
+      {/* Logout Menu */}
+      <Menu
+        anchorEl={logoutAnchorEl}
+        open={Boolean(logoutAnchorEl)}
+        onClose={handleLogoutMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleLogout} sx={{ color: '#29510A' }}>
+          <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
+          Logout
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };
