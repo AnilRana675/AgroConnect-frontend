@@ -14,37 +14,32 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   nepalDistricts,
   getDistrictsByProvince,
 } from '../constants/nepalDistricts';
+import { registrationService, authService } from '../services';
 
 const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
   useEffect(() => {
+    // Load sessionId from localStorage if present
+    const savedSessionId = localStorage.getItem('registrationSessionId');
+    if (savedSessionId) setSessionId(savedSessionId);
     const checkSession = async () => {
       try {
-        console.log('Checking session...');
-        const response = await axios.get(
-          'http://localhost:3001/api/auth/check-session',
-          { withCredentials: true },
-        );
-        console.log('Session response:', response.data);
-        if (response.data && response.data.loggedIn) {
+        if (authService.isAuthenticated()) {
           navigate('/user');
-        } else {
-          // Not logged in, stay on signup
-          console.log('Not logged in, stay on signup');
         }
       } catch (err) {
-        // Error or no response, stay on signup
-        console.log('Session check error or no response:', err);
+        console.log('Session check error:', err);
       }
     };
     checkSession();
   }, [navigate]);
+
   const [step, setStep] = useState(1);
+  const [sessionId, setSessionId] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
@@ -78,7 +73,11 @@ const SignUpPage: React.FC = () => {
     'Commercial Farmer',
   ];
 
-  const economicScales = ['Small', 'Medium', 'Large'];
+  const economicScales = [
+    { value: 'Small', label: 'Small (50,000 – 100,000 NPR)' },
+    { value: 'Medium', label: 'Medium (100,001 – 500,000 NPR)' },
+    { value: 'Large', label: 'Large (500,001+ NPR)' },
+  ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -98,62 +97,134 @@ const SignUpPage: React.FC = () => {
     if (error) setError('');
   };
 
-  const handleNext = () => {
-    // Validation for each step
-    switch (step) {
-      case 1:
-        if (!formData.firstName || !formData.lastName) {
-          setError('First and Last Name are required.');
-          return;
-        }
-        break;
-      case 2:
-        if (!formData.province) {
-          setError('Please select your province.');
-          return;
-        }
-        if (!formData.location) {
-          setError('Please select your district.');
-          return;
-        }
-        break;
-      case 3:
-        if (!formData.farmerType) {
-          setError('Please select your farmer type.');
-          return;
-        }
-        break;
-      case 4:
-        if (!formData.economicScale) {
-          setError('Please select your economic scale.');
-          return;
-        }
-        break;
-      case 5:
-        if (!formData.email) {
-          setError('Email is required.');
-          return;
-        }
-        break;
-      case 6:
-        if (!formData.password || !formData.confirmPassword) {
-          setError('Please enter and confirm your password.');
-          return;
-        }
-        if (formData.password !== formData.confirmPassword) {
-          setError('Passwords do not match.');
-          return;
-        }
-        if (formData.password.length < 6) {
-          setError('Password must be at least 6 characters.');
-          return;
-        }
-        break;
-      default:
-        break;
-    }
+  const handleNext = async () => {
+    setLoading(true);
     setError('');
-    if (step < 7) setStep(prev => prev + 1);
+
+    try {
+      switch (step) {
+        case 1:
+          if (!formData.firstName || !formData.lastName) {
+            setError('First and Last Name are required.');
+            return;
+          }
+          const step1Response = await registrationService.step1({
+            firstName: formData.firstName,
+            middleName: formData.middleName,
+            lastName: formData.lastName,
+            sessionId:
+              (sessionId || localStorage.getItem('registrationSessionId')) ??
+              undefined,
+          });
+          // Robustly extract sessionId from response
+          const newSessionId =
+            step1Response.sessionId ||
+            (step1Response.data && step1Response.data.sessionId);
+          if (newSessionId) {
+            setSessionId(newSessionId);
+            localStorage.setItem('registrationSessionId', newSessionId);
+          }
+          break;
+
+        case 2:
+          if (!formData.province) {
+            setError('Please select your province.');
+            return;
+          }
+          if (!formData.location) {
+            setError('Please select your district.');
+            return;
+          }
+          const sessionIdToSend =
+            sessionId || localStorage.getItem('registrationSessionId') || '';
+          console.log('Step 2 sessionId:', sessionIdToSend);
+          await registrationService.step2({
+            province: formData.province,
+            district: formData.location,
+            municipality: formData.location, // Using district as municipality for now
+            sessionId: sessionIdToSend,
+          });
+          break;
+
+        case 3:
+          if (!formData.farmerType) {
+            setError('Please select your farmer type.');
+            return;
+          }
+          await registrationService.step3({
+            farmerType: formData.farmerType,
+            sessionId:
+              sessionId || localStorage.getItem('registrationSessionId') || '',
+          });
+          break;
+
+        case 4:
+          if (!formData.economicScale) {
+            setError('Please select your economic scale.');
+            return;
+          }
+          await registrationService.step4({
+            economicScale: formData.economicScale,
+            sessionId:
+              sessionId || localStorage.getItem('registrationSessionId') || '',
+          });
+          break;
+
+        case 5:
+          if (!formData.email) {
+            setError('Email is required.');
+            return;
+          }
+          await registrationService.step5({
+            email: formData.email,
+            sessionId:
+              sessionId || localStorage.getItem('registrationSessionId') || '',
+          });
+          break;
+
+        case 6:
+          if (!formData.password || !formData.confirmPassword) {
+            setError('Please enter and confirm your password.');
+            return;
+          }
+          if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+          }
+          if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters.');
+            return;
+          }
+
+          // Complete registration
+          const completeResponse = await registrationService.complete({
+            password: formData.password,
+            sessionId:
+              sessionId || localStorage.getItem('registrationSessionId') || '',
+          });
+
+          if (completeResponse.registrationComplete) {
+            setSuccess(
+              'Account created successfully! Redirecting to user dashboard...',
+            );
+            setTimeout(() => {
+              navigate('/user');
+            }, 2000);
+            return;
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      setError('');
+      if (step < 6) setStep(prev => prev + 1);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrev = () => {
@@ -163,38 +234,7 @@ const SignUpPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    try {
-      // Replace with your actual API endpoint
-      const response = await axios.post(
-        'http://localhost:3001/api/auth/register',
-        {
-          firstName: formData.firstName,
-          middleName: formData.middleName,
-          lastName: formData.lastName,
-          province: formData.province,
-          district: formData.location, // changed from location to district
-          farmerType: formData.farmerType,
-          economicScale: formData.economicScale,
-          email: formData.email,
-          password: formData.password,
-        },
-      );
-      if (response.data.success) {
-        setSuccess('Account created successfully! Please login.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Registration failed. Please try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
+    await handleNext();
   };
 
   return (
@@ -317,8 +357,22 @@ const SignUpPage: React.FC = () => {
 
             {/* Step Form */}
             <form
-              onSubmit={step === 7 ? handleSubmit : e => e.preventDefault()}
+              onSubmit={step === 6 ? handleSubmit : e => e.preventDefault()}
             >
+              {/* Question Number Indicator */}
+              {step >= 1 && step <= 6 && (
+                <Typography
+                  variant='subtitle1'
+                  sx={{
+                    mb: 1,
+                    color: '#388E3C',
+                    fontWeight: 'bold',
+                    fontFamily: 'Nunito, sans-serif',
+                  }}
+                >
+                  Question {step} of 6
+                </Typography>
+              )}
               {step === 1 && (
                 <>
                   <Typography
@@ -445,8 +499,8 @@ const SignUpPage: React.FC = () => {
                     sx={{ mb: 3 }}
                   >
                     {economicScales.map(scale => (
-                      <MenuItem key={scale} value={scale}>
-                        {scale}
+                      <MenuItem key={scale.value} value={scale.value}>
+                        {scale.label}
                       </MenuItem>
                     ))}
                   </TextField>
@@ -544,16 +598,16 @@ const SignUpPage: React.FC = () => {
                     Previous
                   </Button>
                 )}
-                {step < 7 && (
+                {step < 6 && (
                   <Button
                     variant='contained'
                     onClick={handleNext}
                     disabled={loading}
                   >
-                    Next
+                    {loading ? 'Processing...' : 'Next'}
                   </Button>
                 )}
-                {step === 7 && (
+                {step === 6 && (
                   <Button type='submit' variant='contained' disabled={loading}>
                     {loading ? 'Creating Account...' : 'Finish & Sign Up'}
                   </Button>
