@@ -8,18 +8,19 @@ import {
   Button,
   Menu,
   MenuItem,
+  Divider,
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import LogoutIcon from '@mui/icons-material/Logout';
 import axios from 'axios';
 import authService from '../services/authService';
 import ReactMarkdown from 'react-markdown';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const navItems = [
   { label: 'Question' },
   { label: 'Message' },
   { label: 'Image Query' },
-  { label: 'FAQ' },
 ];
 
 const UserPage: React.FC = () => {
@@ -58,6 +59,15 @@ const UserPage: React.FC = () => {
   const [logoutAnchorEl, setLogoutAnchorEl] = useState<null | HTMLElement>(
     null,
   );
+
+  // More menu state
+  const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
+  const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMoreAnchorEl(event.currentTarget);
+  };
+  const handleMoreMenuClose = () => {
+    setMoreAnchorEl(null);
+  };
 
   // Fetch user profile on mount
   React.useEffect(() => {
@@ -297,6 +307,16 @@ const UserPage: React.FC = () => {
     }
   };
 
+  // Map onboardingStatus to user-friendly label
+  const getFarmerLevelLabel = (status: string | undefined) => {
+    if (status === 'I AM NEW TO FARMING') return 'New to Farming';
+    if (status === 'I ALREADY HAVE AN ESTABLISHED FARM')
+      return 'Has an Established Farm';
+    if (status === 'I AM LOOKING FOR NEW IDEAS & TRENDS')
+      return 'Looking for ideas';
+    return status || 'N/A';
+  };
+
   // Main content for each nav item
   const renderMainContent = () => {
     if (firstVisit) {
@@ -373,6 +393,126 @@ const UserPage: React.FC = () => {
           alignItems: 'center',
         }}
       >
+        {selectedNav === 'UserInfo' && userProfile && (
+          <Box
+            sx={{
+              width: 'auto',
+              maxWidth: 400,
+              mx: { xs: 1, sm: 'auto' },
+              textAlign: 'left',
+              bgcolor: 'rgba(245,255,245,0.97)',
+              border: '1.5px solid #c8e6c9',
+              borderRadius: { xs: 2, sm: 3 },
+              p: { xs: 1.5, sm: 4 },
+              mb: 2,
+              boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Avatar
+                sx={{
+                  bgcolor: '#7A8B6F',
+                  width: 56,
+                  height: 56,
+                  fontWeight: 'bold',
+                  fontSize: 28,
+                  mr: 2,
+                }}
+              >
+                {userProfile.personalInfo?.firstName?.[0] || '?'}
+                {userProfile.personalInfo?.lastName?.[0] || ''}
+              </Avatar>
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#29510A',
+                    fontWeight: 'bold',
+                    fontFamily: 'Nunito, sans-serif',
+                    fontSize: 20,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {userProfile.personalInfo?.firstName}{' '}
+                  {userProfile.personalInfo?.middleName || ''}{' '}
+                  {userProfile.personalInfo?.lastName}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: '#388E3C',
+                    fontFamily: 'Nunito, sans-serif',
+                    fontSize: 14,
+                  }}
+                >
+                  {userProfile.loginCredentials?.email || 'N/A'}
+                </Typography>
+              </Box>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>Province:</b> {userProfile.locationInfo?.province || 'N/A'}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>District:</b> {userProfile.locationInfo?.district || 'N/A'}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>Type of Farmer (Sector):</b>{' '}
+              {userProfile.farmInfo?.farmerType || 'N/A'}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>Economic Scale of Farming:</b>{' '}
+              {userProfile.farmInfo?.economicScale || 'N/A'}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>Current Level of Farmer:</b>{' '}
+              {getFarmerLevelLabel(userProfile.onboardingStatus)}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#222',
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 16,
+                mb: 1,
+              }}
+            >
+              <b>Email:</b> {userProfile.loginCredentials?.email || 'N/A'}
+            </Typography>
+          </Box>
+        )}
         {selectedNav === 'Question' && (
           <>
             {/* Chatbot UI */}
@@ -583,12 +723,13 @@ const UserPage: React.FC = () => {
         {selectedNav === 'FAQ' && (
           <Box
             sx={{
-              width: '100%',
-              maxWidth: 900,
+              width: 'auto',
+              maxWidth: { xs: '95vw', sm: 900 },
+              mx: { xs: 1, sm: 'auto' },
               minHeight: 300,
               bgcolor: 'rgba(255,255,255,0.05)',
               borderRadius: 3,
-              p: 3,
+              p: { xs: 1.5, sm: 4 },
               mb: 2,
               overflowY: 'auto',
               flex: 1,
@@ -740,155 +881,150 @@ const UserPage: React.FC = () => {
           position: 'relative',
           zIndex: 3,
           display: 'flex',
+          flexDirection: 'column',
           minHeight: '100vh',
         }}
       >
-        {/* Sidebar */}
+        {/* Top Navbar */}
         <Box
           sx={{
-            width: { xs: 120, sm: 200 },
-            minWidth: 100,
+            width: '100%',
+            minWidth: 'unset',
             background: 'linear-gradient(180deg, #4A7C1B 0%, #29510A 100%)',
             color: 'white',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
-            py: 4,
+            py: 1,
             px: 2,
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            gap: 1,
+            boxShadow: 2,
+            position: 'static',
+            zIndex: 4,
           }}
         >
-          <Box sx={{ width: '100%', textAlign: 'left' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 4,
-              }}
-            >
-              <img
-                src={require('../assets/agroSIDE.png')}
-                alt='Logo'
-                style={{
-                  maxWidth: '95%',
-                  maxHeight: '200px',
-                  height: 'auto',
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: { xs: 0.5, sm: 1 },
+              overflowX: { xs: 'auto', sm: 'visible' },
+              whiteSpace: { xs: 'nowrap', sm: 'normal' },
+              pb: { xs: 0.5, sm: 0 },
+              mb: { xs: 1, sm: 0 },
+              scrollbarWidth: 'thin',
+              '&::-webkit-scrollbar': { height: 4 },
+            }}
+          >
+            {navItems.map(item => (
+              <Button
+                key={item.label}
+                onClick={() => setSelectedNav(item.label)}
+                sx={{
+                  display: 'inline-block',
                   width: 'auto',
-                  display: 'block',
+                  minWidth: 'unset',
+                  textAlign: { xs: 'center', sm: 'left' },
+                  color: 'white',
+                  fontFamily: 'Nunito, sans-serif',
+                  fontSize: { xs: 13, sm: 22 },
+                  mb: { xs: 0, sm: 1 },
+                  fontWeight: selectedNav === item.label ? 'bold' : 'normal',
+                  background:
+                    selectedNav === item.label ? 'rgba(0,0,0,0.15)' : 'none',
+                  borderRadius: 1,
+                  px: { xs: 1, sm: 2 },
+                  py: { xs: 0.2, sm: 0.5 },
+                  mx: { xs: 0.5, sm: 0 },
+                  minHeight: { xs: 32, sm: 40 },
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    background: 'rgba(0,0,0,0.10)',
+                  },
                 }}
-              />
-            </Box>
-            <Box sx={{ mt: 2 }}>
-              {navItems.map(item => (
-                <Button
-                  key={item.label}
-                  onClick={() => setSelectedNav(item.label)}
-                  sx={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    color: 'white',
-                    fontFamily: 'Nunito, sans-serif',
-                    fontSize: 22,
-                    mb: 1,
-                    fontWeight: selectedNav === item.label ? 'bold' : 'normal',
-                    background:
-                      selectedNav === item.label ? 'rgba(0,0,0,0.15)' : 'none',
-                    borderRadius: 1,
-                    px: 2,
-                    py: 0.5,
-                    '&:hover': {
-                      background: 'rgba(0,0,0,0.10)',
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          </Box>
-          {/* User info at bottom */}
-          <Box sx={{ width: '100%', mb: 2 }}>
-            <Box
+              >
+                {item.label}
+              </Button>
+            ))}
+            {/* More menu button */}
+            <IconButton
+              onClick={handleMoreMenuOpen}
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                bgcolor: '#e6f2d9',
-                borderRadius: 2,
-                p: 1.2,
-                boxShadow: 1,
-                minHeight: 48,
-                gap: 1.2,
-                flexDirection: 'row',
-                justifyContent: 'flex-start',
+                color: 'white',
+                ml: { xs: 0.5, sm: 0 },
+                minWidth: 0,
+                p: { xs: 0.5, sm: 1 },
+                fontSize: { xs: 20, sm: 28 },
+              }}
+              aria-label='more'
+              aria-controls='more-menu'
+              aria-haspopup='true'
+            >
+              <MoreVertIcon />
+            </IconButton>
+          </Box>
+          {/* More dropdown menu */}
+          <Menu
+            id='more-menu'
+            anchorEl={moreAnchorEl}
+            open={Boolean(moreAnchorEl)}
+            onClose={handleMoreMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem
+              onClick={() => {
+                setSelectedNav('FAQ');
+                handleMoreMenuClose();
               }}
             >
-              {profileLoading ? (
-                <Typography
+              FAQ
+            </MenuItem>
+            <Divider />
+            {userProfile && (
+              <MenuItem
+                onClick={() => {
+                  setSelectedNav('UserInfo');
+                  handleMoreMenuClose();
+                }}
+                sx={{ display: 'flex', alignItems: 'center', minWidth: 180 }}
+              >
+                <Avatar
                   sx={{
-                    color: '#29510A',
-                    fontFamily: 'Nunito, sans-serif',
+                    bgcolor: '#7A8B6F',
+                    width: 32,
+                    height: 32,
+                    fontWeight: 'bold',
                     fontSize: 16,
+                    mr: 1,
                   }}
                 >
-                  Loading profile...
-                </Typography>
-              ) : profileError ? (
-                <Typography
-                  sx={{
-                    color: 'red',
-                    fontFamily: 'Nunito, sans-serif',
-                    fontSize: 16,
-                  }}
-                >
-                  {profileError}
-                </Typography>
-              ) : userProfile ? (
-                <>
-                  <Avatar
-                    sx={{
-                      bgcolor: '#7A8B6F',
-                      width: 48,
-                      height: 48,
-                      fontWeight: 'bold',
-                      fontSize: 24,
-                      mr: 2,
-                    }}
-                  >
-                    {userProfile.personalInfo?.firstName?.[0] || '?'}
-                    {userProfile.personalInfo?.lastName?.[0] || ''}
-                  </Avatar>
-                  <Box sx={{ textAlign: 'left', flex: 1 }}>
-                    <Typography
-                      sx={{
-                        color: '#29510A',
-                        fontWeight: 'bold',
-                        fontFamily: 'Nunito, sans-serif',
-                        fontSize: 18,
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {userProfile.personalInfo?.firstName}{' '}
-                      {userProfile.personalInfo?.lastName}
-                    </Typography>
-                  </Box>
-                  <IconButton
-                    onClick={handleLogoutMenuOpen}
+                  {userProfile.personalInfo?.firstName?.[0] || '?'}
+                  {userProfile.personalInfo?.lastName?.[0] || ''}
+                </Avatar>
+                <Box>
+                  <Typography
                     sx={{
                       color: '#29510A',
-                      p: 0.5,
-                      '&:hover': {
-                        backgroundColor: 'rgba(41, 81, 10, 0.1)',
-                      },
+                      fontWeight: 'bold',
+                      fontFamily: 'Nunito, sans-serif',
+                      fontSize: 14,
+                      lineHeight: 1.2,
                     }}
                   >
-                    <LogoutIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                </>
-              ) : null}
-            </Box>
-          </Box>
+                    {userProfile.personalInfo?.firstName}{' '}
+                    {userProfile.personalInfo?.lastName}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            )}
+            <MenuItem onClick={handleLogout} sx={{ color: '#29510A' }}>
+              <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
+              Logout
+            </MenuItem>
+          </Menu>
         </Box>
         {/* Main Content */}
         <Box
@@ -900,7 +1036,8 @@ const UserPage: React.FC = () => {
             justifyContent: 'flex-start',
             position: 'relative',
             overflow: 'hidden',
-            height: '100vh',
+            minHeight: 'calc(100vh - 64px)', // leave space for navbar
+            pt: 2,
           }}
         >
           <Box
@@ -911,8 +1048,8 @@ const UserPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              py: 4,
-              px: 2,
+              py: { xs: 1, sm: 4 },
+              px: { xs: 1, sm: 2 },
             }}
           >
             {renderMainContent()}
@@ -920,25 +1057,7 @@ const UserPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Logout Menu */}
-      <Menu
-        anchorEl={logoutAnchorEl}
-        open={Boolean(logoutAnchorEl)}
-        onClose={handleLogoutMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-      >
-        <MenuItem onClick={handleLogout} sx={{ color: '#29510A' }}>
-          <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
-          Logout
-        </MenuItem>
-      </Menu>
+      {/* Logout Menu removed, now in More menu */}
     </Box>
   );
 };
