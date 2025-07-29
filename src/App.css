@@ -23,3 +23,16 @@
   font-size: 1.2rem;
   opacity: 0.8;
 }
+
+@media (max-width: 600px) {
+  .App-header {
+    padding: 8px 0;
+    font-size: 1.1rem;
+  }
+  .App-header h1 {
+    font-size: 2rem;
+  }
+  .App-header p {
+    font-size: 1rem;
+  }
+}
