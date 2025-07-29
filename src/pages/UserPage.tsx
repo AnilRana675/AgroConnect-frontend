@@ -26,9 +26,6 @@ const navItems = [
 const UserPage: React.FC = () => {
   // Real user profile state
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [profileError, setProfileError] = useState('');
-
   // Track if this is the user's first visit (simulate with state)
   const [firstVisit, setFirstVisit] = useState(() => {
     const storedUser = authService.getStoredUser();
@@ -55,11 +52,6 @@ const UserPage: React.FC = () => {
   const [tipsError, setTipsError] = useState('');
   const [lastTipsFetch, setLastTipsFetch] = useState<number | null>(null);
 
-  // Logout state
-  const [logoutAnchorEl, setLogoutAnchorEl] = useState<null | HTMLElement>(
-    null,
-  );
-
   // More menu state
   const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
   const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -73,14 +65,10 @@ const UserPage: React.FC = () => {
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
-        setProfileLoading(true);
-        setProfileError('');
         const user = await authService.getCurrentUser();
         setUserProfile(user);
       } catch (err: any) {
-        setProfileError(err.message || 'Failed to load profile');
-      } finally {
-        setProfileLoading(false);
+        // ignore error
       }
     };
     fetchProfile();
@@ -221,29 +209,6 @@ const UserPage: React.FC = () => {
         return;
       }
 
-      // Handle logout menu open
-      const handleLogoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setLogoutAnchorEl(event.currentTarget);
-      };
-
-      // Handle logout menu close
-      const handleLogoutMenuClose = () => {
-        setLogoutAnchorEl(null);
-      };
-
-      // Handle logout
-      const handleLogout = async () => {
-        try {
-          await authService.logout();
-          // Redirect to login page
-          window.location.href = '/login';
-        } catch (error) {
-          console.error('Logout failed:', error);
-          // Still redirect even if logout request fails
-          window.location.href = '/login';
-        }
-      };
-
       // Check if we have cached tips and if they're still valid (less than 1 week old)
       const now = Date.now();
       const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
@@ -283,29 +248,6 @@ const UserPage: React.FC = () => {
     };
     fetchTips();
   }, [selectedNav, personalizedTips, lastTipsFetch]);
-
-  // Handle logout menu open
-  const handleLogoutMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setLogoutAnchorEl(event.currentTarget);
-  };
-
-  // Handle logout menu close
-  const handleLogoutMenuClose = () => {
-    setLogoutAnchorEl(null);
-  };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      // Redirect to login page
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Still redirect even if logout request fails
-      window.location.href = '/login';
-    }
-  };
 
   // Map onboardingStatus to user-friendly label
   const getFarmerLevelLabel = (status: string | undefined) => {
@@ -1020,7 +962,13 @@ const UserPage: React.FC = () => {
                 </Box>
               </MenuItem>
             )}
-            <MenuItem onClick={handleLogout} sx={{ color: '#29510A' }}>
+            <MenuItem
+              onClick={async () => {
+                await authService.logout();
+                window.location.href = '/login';
+              }}
+              sx={{ color: '#29510A' }}
+            >
               <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
               Logout
             </MenuItem>
