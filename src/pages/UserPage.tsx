@@ -36,6 +36,7 @@ import EcoIcon from '@mui/icons-material/Nature';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import api from '../services/api';
+import aiService from '../services/aiService';
 import authService from '../services/authService';
 import plantService, {
   PlantIdentificationResult,
@@ -519,36 +520,16 @@ const UserPage: React.FC = () => {
         { from: 'bot', text: t('user.agroBOTThinking') },
       ]);
       try {
-        console.log('Sending question to API:', input);
-        console.log('User ID:', user._id);
-
-        const res = await api.post('/ai/ask', {
+        const response = await aiService.getAdvice({
           question: input,
           userId: user._id,
         });
-
-        console.log('API Response:', res.data);
-
-        // Check if the response has the expected structure
-        if (res.data && res.data.data && res.data.data.answer) {
-          // Remove loading message and add AI response
-          setMessages(prev => [
-            ...prev.slice(0, -1),
-            { from: 'bot', text: res.data.data.answer },
-          ]);
-        } else {
-          console.error('Unexpected API response structure:', res.data);
-          setMessages(prev => [
-            ...prev.slice(0, -1),
-            {
-              from: 'bot',
-              text: t('user.agroBOTError'),
-            },
-          ]);
-        }
-      } catch (err: any) {
-        console.error('API Error:', err);
-        console.error('Error response:', err.response?.data);
+        // Remove loading message and add AI response
+        setMessages(prev => [
+          ...prev.slice(0, -1),
+          { from: 'bot', text: response.data.answer },
+        ]);
+      } catch (err) {
         setMessages(prev => [
           ...prev.slice(0, -1),
           {
