@@ -6,7 +6,7 @@ services:
     staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://agroconnect-backend.onrender.com/api
+        value: https://agroconnect-backend-hl8l.onrender.com/api
     headers:
       - path: /*
         name: X-Frame-Options
