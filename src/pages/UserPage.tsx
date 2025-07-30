@@ -39,6 +39,8 @@ import EcoIcon from '@mui/icons-material/Nature';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import axios from 'axios';
+import api from '../services/api';
+import { aiService } from '../services';
 import authService from '../services/authService';
 import plantService, {
   PlantIdentificationResult,
@@ -426,7 +428,7 @@ const UserPage: React.FC = () => {
         return;
       }
       // Send onboarding status to backend
-      await axios.post(`/api/users/${user._id}/onboarding`, {
+      await api.post(`/users/${user._id}/onboarding`, {
         onboardingStatus: option,
       });
       // Update onboardingStatus in localStorage
@@ -476,14 +478,14 @@ const UserPage: React.FC = () => {
         { from: 'bot', text: 'AgroBOT is thinking...' },
       ]);
       try {
-        const res = await axios.post('/api/ai/ask', {
+        const response = await aiService.getAdvice({
           question: input,
           userId: user._id,
         });
         // Remove loading message and add AI response
         setMessages(prev => [
           ...prev.slice(0, -1),
-          { from: 'bot', text: res.data.data.answer },
+          { from: 'bot', text: response.data.answer },
         ]);
       } catch (err) {
         setMessages(prev => [
@@ -525,7 +527,7 @@ const UserPage: React.FC = () => {
       setTipsLoading(true);
       setTipsError('');
       try {
-        const res = await axios.get(`/api/ai/weekly-tips/${user._id}`);
+        const res = await api.get(`/ai/weekly-tips/${user._id}`);
         const tips = res.data.data?.tips || 'No tips available.';
         setPersonalizedTips(tips);
         setLastTipsFetch(now);
