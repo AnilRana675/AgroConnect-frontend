@@ -3,6 +3,7 @@ export { default as api } from './api';
 export { default as authService } from './authService';
 export { default as registrationService } from './registrationService';
 export { default as aiService } from './aiService';
+export { default as plantService } from './plantService';
 
 // Export types
 export type { LoginData, AuthResponse, User } from './authService';
@@ -27,3 +28,5 @@ export type {
   AIWeeklyTipsResponse,
   AIServiceStatus,
 } from './aiService';
+
+export type { PlantIdentificationResult } from './plantService';

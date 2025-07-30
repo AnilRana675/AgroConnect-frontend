@@ -9,13 +9,305 @@ import {
   Menu,
   MenuItem,
   Divider,
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Chip,
+  Paper,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import LogoutIcon from '@mui/icons-material/Logout';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import DeleteIcon from '@mui/icons-material/Delete';
+import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
+import ScienceIcon from '@mui/icons-material/Science';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import WarningIcon from '@mui/icons-material/Warning';
+import AgricultureIcon from '@mui/icons-material/Agriculture';
+import InfoIcon from '@mui/icons-material/Info';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
+import GrassIcon from '@mui/icons-material/Grass';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import EcoIcon from '@mui/icons-material/Nature';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import axios from 'axios';
 import authService from '../services/authService';
+import plantService, {
+  PlantIdentificationResult,
+} from '../services/plantService';
 import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+
+// Helper function to parse agricultural guide content into sections
+const parseAgriculturalGuide = (content: string) => {
+  const sections = [];
+  const lines = content.split('\n');
+  let currentSection = {
+    title: '',
+    content: '',
+    icon: InfoIcon,
+    color: '#1976d2',
+  };
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    // Check for headers that indicate new sections
+    if (
+      trimmedLine.match(/^#+\s*(cultivation|cultivating|planting|growing)/i)
+    ) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Cultivation',
+        content: '',
+        icon: GrassIcon,
+        color: '#388e3c',
+      };
+    } else if (trimmedLine.match(/^#+\s*(care|maintenance|caring|upkeep)/i)) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Care & Maintenance',
+        content: '',
+        icon: EcoIcon,
+        color: '#689f38',
+      };
+    } else if (
+      trimmedLine.match(/^#+\s*(harvest|harvesting|picking|collecting)/i)
+    ) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Harvesting',
+        content: '',
+        icon: AgricultureIcon,
+        color: '#8bc34a',
+      };
+    } else if (trimmedLine.match(/^#+\s*(growth|growing|development)/i)) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Growth Info',
+        content: '',
+        icon: LocalFloristIcon,
+        color: '#4caf50',
+      };
+    } else if (
+      trimmedLine.match(
+        /^#+\s*(issue|issues|problem|problems|pest|disease|common)/i,
+      )
+    ) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Common Issues',
+        content: '',
+        icon: BugReportIcon,
+        color: '#d32f2f',
+      };
+    } else if (trimmedLine.match(/^#+\s*(watering|water|irrigation)/i)) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Watering',
+        content: '',
+        icon: WaterDropIcon,
+        color: '#0288d1',
+      };
+    } else if (trimmedLine.match(/^#+\s*(sunlight|light|sun)/i)) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Sunlight Requirements',
+        content: '',
+        icon: WbSunnyIcon,
+        color: '#f57c00',
+      };
+    } else if (trimmedLine.match(/^#+\s*(season|time|schedule|timing)/i)) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Seasonal Care',
+        content: '',
+        icon: ScheduleIcon,
+        color: '#7b1fa2',
+      };
+    } else if (
+      trimmedLine.match(
+        /^#+\s*(current|condition|diagnosis|health|plant condition|analysis)/i,
+      )
+    ) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: 'Current Plant Condition & Diagnosis',
+        content: '',
+        icon: HealthAndSafetyIcon,
+        color: '#ff5722',
+      };
+    } else if (trimmedLine.startsWith('#')) {
+      if (currentSection.content || currentSection.title)
+        sections.push({ ...currentSection });
+      currentSection = {
+        title: trimmedLine.replace(/^#+\s*/, ''),
+        content: '',
+        icon: InfoIcon,
+        color: '#1976d2',
+      };
+    } else if (trimmedLine || line.trim() === '') {
+      currentSection.content += line + '\n';
+    }
+  }
+
+  if (currentSection.content || currentSection.title) {
+    sections.push(currentSection);
+  }
+
+  // If no sections were created or only one generic section,
+  // try to split by common agricultural topics
+  if (sections.length <= 1) {
+    const fallbackSections = [];
+
+    // Split content by common patterns or create default sections
+    const contentLower = content.toLowerCase();
+
+    if (
+      contentLower.includes('cultivation') ||
+      contentLower.includes('planting')
+    ) {
+      fallbackSections.push({
+        title: 'Cultivation',
+        content: extractSectionContent(content, [
+          'cultivation',
+          'planting',
+          'growing',
+        ]),
+        icon: GrassIcon,
+        color: '#388e3c',
+      });
+    }
+
+    if (contentLower.includes('care') || contentLower.includes('maintenance')) {
+      fallbackSections.push({
+        title: 'Care & Maintenance',
+        content: extractSectionContent(content, [
+          'care',
+          'maintenance',
+          'caring',
+        ]),
+        icon: EcoIcon,
+        color: '#689f38',
+      });
+    }
+
+    if (contentLower.includes('harvest')) {
+      fallbackSections.push({
+        title: 'Harvesting',
+        content: extractSectionContent(content, [
+          'harvest',
+          'picking',
+          'collecting',
+        ]),
+        icon: AgricultureIcon,
+        color: '#8bc34a',
+      });
+    }
+
+    if (
+      contentLower.includes('issue') ||
+      contentLower.includes('problem') ||
+      contentLower.includes('pest')
+    ) {
+      fallbackSections.push({
+        title: 'Common Issues',
+        content: extractSectionContent(content, [
+          'issue',
+          'problem',
+          'pest',
+          'disease',
+        ]),
+        icon: BugReportIcon,
+        color: '#d32f2f',
+      });
+    }
+
+    if (
+      contentLower.includes('condition') ||
+      contentLower.includes('diagnosis') ||
+      contentLower.includes('health') ||
+      contentLower.includes('current')
+    ) {
+      fallbackSections.push({
+        title: 'Current Plant Condition & Diagnosis',
+        content: extractSectionContent(content, [
+          'condition',
+          'diagnosis',
+          'health',
+          'current',
+          'analysis',
+          'observe',
+        ]),
+        icon: HealthAndSafetyIcon,
+        color: '#ff5722',
+      });
+    }
+
+    // If we found specific sections, use them; otherwise use the original content
+    if (fallbackSections.length > 0) {
+      return fallbackSections;
+    }
+
+    // Last resort: return the entire content as general information
+    return [
+      {
+        title: 'Agricultural Information',
+        content: content,
+        icon: AgricultureIcon,
+        color: '#1976d2',
+      },
+    ];
+  }
+
+  return sections;
+};
+
+// Helper function to extract content related to specific topics
+const extractSectionContent = (content: string, keywords: string[]) => {
+  const lines = content.split('\n');
+  const relevantLines = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineLower = line.toLowerCase();
+
+    // Check if this line contains any of our keywords
+    if (keywords.some(keyword => lineLower.includes(keyword))) {
+      relevantLines.push(line);
+
+      // Include the next few lines as context
+      for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+        if (lines[j].trim() && !lines[j].startsWith('#')) {
+          relevantLines.push(lines[j]);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  return relevantLines.length > 0
+    ? relevantLines.join('\n')
+    : 'No specific information available.';
+};
 
 const navItems = [
   { label: 'Question' },
@@ -60,6 +352,14 @@ const UserPage: React.FC = () => {
   const handleMoreMenuClose = () => {
     setMoreAnchorEl(null);
   };
+
+  // Image Query state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [plantResult, setPlantResult] =
+    useState<PlantIdentificationResult | null>(null);
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [imageError, setImageError] = useState<string>('');
 
   // Fetch user profile on mount
   React.useEffect(() => {
@@ -248,6 +548,75 @@ const UserPage: React.FC = () => {
     };
     fetchTips();
   }, [selectedNav, personalizedTips, lastTipsFetch]);
+
+  // Image handling functions
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate the image file
+    const validation = plantService.validateImageFile(file);
+    if (!validation.valid) {
+      setImageError(validation.error || 'Invalid file');
+      return;
+    }
+
+    setImageError('');
+    setSelectedImage(file);
+    setPlantResult(null);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  const handleImageRemove = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setSelectedImage(null);
+    setImagePreview(null);
+    setPlantResult(null);
+    setImageError('');
+  };
+
+  const handlePlantIdentification = async () => {
+    if (!selectedImage) {
+      setImageError('Please select an image first');
+      return;
+    }
+
+    setIsIdentifying(true);
+    setImageError('');
+
+    try {
+      // Convert image to base64
+      const base64Image = await plantService.fileToBase64(selectedImage);
+
+      // Call plant identification API
+      const result = await plantService.identifyPlant(base64Image);
+
+      setPlantResult(result);
+
+      if (!result.success) {
+        setImageError(result.error || 'Failed to identify plant');
+      }
+    } catch (error) {
+      console.error('Plant identification error:', error);
+      setImageError('An error occurred while identifying the plant');
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  // Clean up image preview URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   // Map onboardingStatus to user-friendly label
   const getFarmerLevelLabel = (status: string | undefined) => {
@@ -655,12 +1024,693 @@ const UserPage: React.FC = () => {
           </Box>
         )}
         {selectedNav === 'Image Query' && (
-          <Typography
-            variant='h3'
-            sx={{ color: 'white', fontFamily: 'Rubik, sans-serif' }}
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: 800,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3,
+            }}
           >
-            Image Query area (coming soon)
-          </Typography>
+            <Typography
+              variant='h3'
+              sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
+            >
+              Plant Identification
+            </Typography>
+
+            <Typography
+              sx={{
+                color: '#bbb',
+                fontFamily: 'Nunito, sans-serif',
+                textAlign: 'center',
+                mb: 2,
+              }}
+            >
+              Upload an image of a plant to get identification and agricultural
+              guidance
+            </Typography>
+
+            {/* Image Upload Section */}
+            <Box
+              sx={{
+                width: '100%',
+                maxWidth: 400,
+                border: '2px dashed #2196f3',
+                borderRadius: 3,
+                p: 3,
+                textAlign: 'center',
+                bgcolor: 'rgba(255,255,255,0.05)',
+              }}
+            >
+              {!imagePreview ? (
+                <Box>
+                  <input
+                    type='file'
+                    accept='image/*'
+                    onChange={handleImageSelect}
+                    style={{ display: 'none' }}
+                    id='image-upload'
+                  />
+                  <label htmlFor='image-upload'>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <CloudUploadIcon
+                        sx={{ fontSize: 48, color: '#2196f3' }}
+                      />
+                      <Typography
+                        sx={{
+                          color: 'white',
+                          fontFamily: 'Nunito, sans-serif',
+                          fontSize: 16,
+                        }}
+                      >
+                        Click to upload an image
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: '#bbb',
+                          fontFamily: 'Nunito, sans-serif',
+                          fontSize: 12,
+                        }}
+                      >
+                        Supports JPEG, PNG, GIF, WebP (max 10MB)
+                      </Typography>
+                    </Box>
+                  </label>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <img
+                    src={imagePreview}
+                    alt='Selected plant'
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 300,
+                      borderRadius: 8,
+                      objectFit: 'contain',
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant='contained'
+                      startIcon={<PhotoCameraIcon />}
+                      onClick={handlePlantIdentification}
+                      disabled={isIdentifying}
+                      sx={{
+                        bgcolor: '#4A7C1B',
+                        '&:hover': { bgcolor: '#29510A' },
+                        fontFamily: 'Nunito, sans-serif',
+                      }}
+                    >
+                      {isIdentifying ? (
+                        <>
+                          <CircularProgress
+                            size={20}
+                            color='inherit'
+                            sx={{ mr: 1 }}
+                          />
+                          Identifying...
+                        </>
+                      ) : (
+                        'Identify Plant'
+                      )}
+                    </Button>
+                    <Button
+                      variant='outlined'
+                      startIcon={<DeleteIcon />}
+                      onClick={handleImageRemove}
+                      sx={{
+                        borderColor: '#f44336',
+                        color: '#f44336',
+                        '&:hover': {
+                          borderColor: '#d32f2f',
+                          bgcolor: 'rgba(244, 67, 54, 0.1)',
+                        },
+                        fontFamily: 'Nunito, sans-serif',
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* Error Display */}
+            {imageError && (
+              <Alert severity='error' sx={{ width: '100%', maxWidth: 400 }}>
+                {imageError}
+              </Alert>
+            )}
+
+            {/* Plant Identification Results */}
+            {plantResult && (
+              <Card
+                sx={{
+                  width: '100%',
+                  maxWidth: 700,
+                  bgcolor: 'rgba(255,255,255,0.98)',
+                  borderRadius: 4,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  overflow: 'hidden',
+                }}
+              >
+                {plantResult.success && plantResult.data ? (
+                  <>
+                    {/* Header Section */}
+                    <Box
+                      sx={{
+                        background:
+                          'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
+                        color: 'white',
+                        p: 3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <LocalFloristIcon sx={{ fontSize: 40 }} />
+                      <Box>
+                        <Typography
+                          variant='h5'
+                          sx={{
+                            fontFamily: 'Rubik, sans-serif',
+                            fontWeight: 'bold',
+                            mb: 0.5,
+                          }}
+                        >
+                          Plant Identified Successfully!
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 14,
+                            opacity: 0.9,
+                            fontFamily: 'Nunito, sans-serif',
+                          }}
+                        >
+                          Analysis complete • {new Date().toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <CardContent sx={{ p: 0 }}>
+                      {/* Warning for non-plant detection */}
+                      {!plantResult.data.isPlant && (
+                        <Alert
+                          severity='warning'
+                          icon={<WarningIcon />}
+                          sx={{
+                            m: 2,
+                            borderRadius: 2,
+                            '& .MuiAlert-message': {
+                              fontFamily: 'Nunito, sans-serif',
+                            },
+                          }}
+                        >
+                          This image might not contain a plant. Results may be
+                          inaccurate.
+                        </Alert>
+                      )}
+
+                      {/* Main Content Grid */}
+                      <Box sx={{ p: 3 }}>
+                        {/* Scientific Name Section */}
+                        <Paper
+                          elevation={1}
+                          sx={{
+                            p: 3,
+                            mb: 3,
+                            borderRadius: 3,
+                            border: '1px solid #e0e0e0',
+                            background:
+                              'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: 2,
+                            }}
+                          >
+                            <ScienceIcon sx={{ color: '#1976d2', mr: 1 }} />
+                            <Typography
+                              variant='h6'
+                              sx={{
+                                color: '#1976d2',
+                                fontFamily: 'Rubik, sans-serif',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              Scientific Classification
+                            </Typography>
+                          </Box>
+                          <Typography
+                            sx={{
+                              color: '#2c3e50',
+                              fontFamily: 'Georgia, serif',
+                              fontStyle: 'italic',
+                              fontSize: 20,
+                              fontWeight: 500,
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            {plantResult.data.scientificName ||
+                              'Unknown species'}
+                          </Typography>
+                        </Paper>
+
+                        {/* Common Names Section */}
+                        {plantResult.data.commonNames &&
+                          plantResult.data.commonNames.length > 0 && (
+                            <Paper
+                              elevation={1}
+                              sx={{
+                                p: 3,
+                                mb: 3,
+                                borderRadius: 3,
+                                border: '1px solid #e0e0e0',
+                                background:
+                                  'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  mb: 2,
+                                }}
+                              >
+                                <InfoIcon sx={{ color: '#4caf50', mr: 1 }} />
+                                <Typography
+                                  variant='h6'
+                                  sx={{
+                                    color: '#4caf50',
+                                    fontFamily: 'Rubik, sans-serif',
+                                    fontWeight: 'bold',
+                                  }}
+                                >
+                                  Common Names
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: 1,
+                                }}
+                              >
+                                {plantResult.data.commonNames.map(
+                                  (name, index) => (
+                                    <Chip
+                                      key={index}
+                                      label={name}
+                                      variant='outlined'
+                                      sx={{
+                                        fontFamily: 'Nunito, sans-serif',
+                                        fontSize: 14,
+                                        fontWeight: 500,
+                                        borderColor: '#4caf50',
+                                        color: '#2e7d32',
+                                        '&:hover': {
+                                          backgroundColor: '#e8f5e8',
+                                        },
+                                      }}
+                                    />
+                                  ),
+                                )}
+                              </Box>
+                            </Paper>
+                          )}
+
+                        {/* Confidence Level Section */}
+                        <Paper
+                          elevation={1}
+                          sx={{
+                            p: 3,
+                            mb: 3,
+                            borderRadius: 3,
+                            border: '1px solid #e0e0e0',
+                            background:
+                              'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              mb: 2,
+                            }}
+                          >
+                            <VerifiedIcon sx={{ color: '#ff9800', mr: 1 }} />
+                            <Typography
+                              variant='h6'
+                              sx={{
+                                color: '#ff9800',
+                                fontFamily: 'Rubik, sans-serif',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              Confidence Level
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 2,
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                color:
+                                  plantResult.data.confidence > 70
+                                    ? '#2e7d32'
+                                    : plantResult.data.confidence > 40
+                                      ? '#f57c00'
+                                      : '#d32f2f',
+                                fontFamily: 'Rubik, sans-serif',
+                                fontSize: 24,
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              {plantResult.data.confidence}%
+                            </Typography>
+                            <Chip
+                              label={
+                                plantResult.data.confidence > 70
+                                  ? 'High Confidence'
+                                  : plantResult.data.confidence > 40
+                                    ? 'Medium Confidence'
+                                    : 'Low Confidence'
+                              }
+                              size='small'
+                              sx={{
+                                backgroundColor:
+                                  plantResult.data.confidence > 70
+                                    ? '#e8f5e8'
+                                    : plantResult.data.confidence > 40
+                                      ? '#fff3e0'
+                                      : '#ffebee',
+                                color:
+                                  plantResult.data.confidence > 70
+                                    ? '#2e7d32'
+                                    : plantResult.data.confidence > 40
+                                      ? '#f57c00'
+                                      : '#d32f2f',
+                                fontWeight: 'bold',
+                              }}
+                            />
+                          </Box>
+                          {/* Confidence Bar */}
+                          <Box
+                            sx={{
+                              width: '100%',
+                              height: 8,
+                              backgroundColor: '#e0e0e0',
+                              borderRadius: 4,
+                              mt: 2,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: `${plantResult.data.confidence}%`,
+                                height: '100%',
+                                background:
+                                  plantResult.data.confidence > 70
+                                    ? 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
+                                    : plantResult.data.confidence > 40
+                                      ? 'linear-gradient(90deg, #ff9800 0%, #f57c00 100%)'
+                                      : 'linear-gradient(90deg, #f44336 0%, #d32f2f 100%)',
+                                transition: 'width 0.3s ease-in-out',
+                              }}
+                            />
+                          </Box>
+                        </Paper>
+
+                        {/* Agricultural Guide Section */}
+                        {plantResult.data.agriGuide && (
+                          <Paper
+                            elevation={1}
+                            sx={{
+                              borderRadius: 3,
+                              border: '1px solid #e0e0e0',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                background:
+                                  'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                                color: 'white',
+                                p: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <AgricultureIcon />
+                              <Typography
+                                variant='h6'
+                                sx={{
+                                  fontFamily: 'Rubik, sans-serif',
+                                  fontWeight: 'bold',
+                                }}
+                              >
+                                Agricultural Guide
+                              </Typography>
+                            </Box>
+                            <Box sx={{ backgroundColor: '#fafafa' }}>
+                              {parseAgriculturalGuide(
+                                plantResult.data?.agriGuide || '',
+                              ).map((section, index) => {
+                                const IconComponent = section.icon;
+                                return (
+                                  <Accordion
+                                    key={index}
+                                    defaultExpanded={index === 0}
+                                    sx={{
+                                      '&:before': { display: 'none' },
+                                      boxShadow: 'none',
+                                      borderBottom:
+                                        index <
+                                        parseAgriculturalGuide(
+                                          plantResult.data?.agriGuide || '',
+                                        ).length -
+                                          1
+                                          ? '1px solid #e0e0e0'
+                                          : 'none',
+                                    }}
+                                  >
+                                    <AccordionSummary
+                                      expandIcon={<ExpandMoreIcon />}
+                                      sx={{
+                                        backgroundColor: 'white',
+                                        borderLeft: `4px solid ${section.color}`,
+                                        '&:hover': {
+                                          backgroundColor: '#f5f5f5',
+                                        },
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 1.5,
+                                        }}
+                                      >
+                                        <IconComponent
+                                          sx={{
+                                            color: section.color,
+                                            fontSize: 24,
+                                          }}
+                                        />
+                                        <Typography
+                                          variant='subtitle1'
+                                          sx={{
+                                            fontFamily: 'Rubik, sans-serif',
+                                            fontWeight: 'bold',
+                                            color: section.color,
+                                          }}
+                                        >
+                                          {section.title ||
+                                            `Section ${index + 1}`}
+                                        </Typography>
+                                      </Box>
+                                    </AccordionSummary>
+                                    <AccordionDetails
+                                      sx={{
+                                        backgroundColor: 'white',
+                                        pt: 0,
+                                        pb: 2,
+                                        px: 3,
+                                        borderLeft: `4px solid ${section.color}`,
+                                        borderTop: `1px solid #e0e0e0`,
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          textAlign: 'left',
+                                          width: '100%',
+                                          '& p': {
+                                            margin: '8px 0',
+                                            fontFamily: 'Nunito, sans-serif',
+                                            lineHeight: 1.6,
+                                            color: '#333',
+                                            fontSize: '14px',
+                                            textAlign: 'left',
+                                          },
+                                          '& ul, & ol': {
+                                            margin: '8px 0',
+                                            paddingLeft: 24,
+                                            marginLeft: 0,
+                                            textAlign: 'left',
+                                            fontFamily: 'Nunito, sans-serif',
+                                            listStylePosition: 'outside',
+                                            direction: 'ltr',
+                                          },
+                                          '& li': {
+                                            marginBottom: 4,
+                                            lineHeight: 1.5,
+                                            color: '#555',
+                                            fontSize: '14px',
+                                            textAlign: 'left',
+                                            listStylePosition: 'outside',
+                                            direction: 'ltr',
+                                            paddingLeft: 0,
+                                            marginLeft: 0,
+                                          },
+                                          '& h1, & h2, & h3, & h4, & h5, & h6':
+                                            {
+                                              color: section.color,
+                                              marginTop: 12,
+                                              marginBottom: 8,
+                                              fontFamily: 'Rubik, sans-serif',
+                                              fontWeight: 'bold',
+                                              fontSize: '16px',
+                                            },
+                                          '& strong': {
+                                            color: section.color,
+                                            fontWeight: 'bold',
+                                          },
+                                          '& em': {
+                                            color: '#666',
+                                            fontStyle: 'italic',
+                                          },
+                                        }}
+                                      >
+                                        <ReactMarkdown
+                                          components={{
+                                            ul: ({ children }) => (
+                                              <ul
+                                                style={{
+                                                  textAlign: 'left',
+                                                  paddingLeft: '24px',
+                                                  marginLeft: 0,
+                                                  listStylePosition: 'outside',
+                                                }}
+                                              >
+                                                {children}
+                                              </ul>
+                                            ),
+                                            ol: ({ children }) => (
+                                              <ol
+                                                style={{
+                                                  textAlign: 'left',
+                                                  paddingLeft: '24px',
+                                                  marginLeft: 0,
+                                                  listStylePosition: 'outside',
+                                                }}
+                                              >
+                                                {children}
+                                              </ol>
+                                            ),
+                                            li: ({ children }) => (
+                                              <li
+                                                style={{
+                                                  textAlign: 'left',
+                                                  listStylePosition: 'outside',
+                                                  marginLeft: 0,
+                                                  paddingLeft: 0,
+                                                }}
+                                              >
+                                                {children}
+                                              </li>
+                                            ),
+                                          }}
+                                        >
+                                          {section.content.trim() ||
+                                            'No specific information available for this section.'}
+                                        </ReactMarkdown>
+                                      </Box>
+                                    </AccordionDetails>
+                                  </Accordion>
+                                );
+                              })}
+                            </Box>
+                          </Paper>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </>
+                ) : (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <WarningIcon
+                      sx={{
+                        fontSize: 60,
+                        color: '#d32f2f',
+                        mb: 2,
+                      }}
+                    />
+                    <Typography
+                      variant='h5'
+                      sx={{
+                        color: '#d32f2f',
+                        fontFamily: 'Rubik, sans-serif',
+                        fontWeight: 'bold',
+                        mb: 2,
+                      }}
+                    >
+                      Identification Failed
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: '#666',
+                        fontFamily: 'Nunito, sans-serif',
+                        fontSize: 16,
+                        lineHeight: 1.5,
+                        maxWidth: 400,
+                        mx: 'auto',
+                      }}
+                    >
+                      {plantResult.error ||
+                        'Unable to identify the plant. Please try with a clearer, well-lit image showing the plant clearly.'}
+                    </Typography>
+                  </Box>
+                )}
+              </Card>
+            )}
+          </Box>
         )}
         {selectedNav === 'FAQ' && (
           <Box
@@ -791,30 +1841,32 @@ const UserPage: React.FC = () => {
       {/* Background Image */}
       <Box
         sx={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
           backgroundImage: `url(${require('../assets/background.png')})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
           filter: 'blur(0.5px) brightness(0.95)',
-          zIndex: 2,
+          zIndex: 1,
         }}
       />
       {/* Green Overlay */}
       <Box
         sx={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
           background:
             'linear-gradient(180deg, rgba(33,65,0,0.85) 0%, rgba(33,65,0,0.5) 60%, rgba(33,65,0,0) 100%)',
           opacity: 1,
-          zIndex: 1,
+          zIndex: 2,
         }}
       />
       {/* Layout */}
@@ -825,6 +1877,9 @@ const UserPage: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
+          width: '100%',
+          overflowX: 'hidden',
+          overflowY: 'auto',
         }}
       >
         {/* Top Navbar */}
