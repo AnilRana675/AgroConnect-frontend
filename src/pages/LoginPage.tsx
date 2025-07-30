@@ -13,10 +13,13 @@ import {
 } from '@mui/material';
 import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authService } from '../services';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,7 +51,7 @@ const LoginPage: React.FC = () => {
         navigate('/user');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || t('login.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -67,6 +70,7 @@ const LoginPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
+      <LanguageSwitcher />
       {/* Background Image */}
       <Box
         sx={{
@@ -150,7 +154,7 @@ const LoginPage: React.FC = () => {
                   fontFamily: 'Rubik, sans-serif',
                 }}
               >
-                Welcome Back
+                {t('login.welcomeBack')}
               </Typography>
               <Typography
                 variant='body1'
@@ -160,7 +164,7 @@ const LoginPage: React.FC = () => {
                   fontFamily: 'Nunito, sans-serif',
                 }}
               >
-                Sign in to your AgroConnect account
+                {t('login.signInAccount')}
               </Typography>
             </Box>
 
@@ -179,14 +183,14 @@ const LoginPage: React.FC = () => {
             >
               <TextField
                 fullWidth
-                label='Email Address'
+                label={t('login.emailAddress')}
                 name='email'
                 type='email'
                 value={formData.email}
                 onChange={handleChange}
                 required
                 sx={{ mb: 3 }}
-                placeholder='Enter your email'
+                placeholder={t('login.enterEmail')}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
@@ -198,14 +202,14 @@ const LoginPage: React.FC = () => {
 
               <TextField
                 fullWidth
-                label='Password'
+                label={t('login.password')}
                 name='password'
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleChange}
                 required
                 sx={{ mb: 3 }}
-                placeholder='Enter your password'
+                placeholder={t('login.enterPassword')}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
@@ -239,7 +243,7 @@ const LoginPage: React.FC = () => {
                   },
                 }}
               >
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? t('login.signingIn') : t('login.signIn')}
               </Button>
 
               {/* Demo Button */}
@@ -261,7 +265,7 @@ const LoginPage: React.FC = () => {
                   },
                 }}
               >
-                Cancel
+                {t('login.cancel')}
               </Button>
 
               {/* Links */}
@@ -270,7 +274,7 @@ const LoginPage: React.FC = () => {
                   variant='body2'
                   sx={{ mb: 2, fontFamily: 'Nunito, sans-serif' }}
                 >
-                  Don't have an account?{' '}
+                  {t('login.noAccount')}{' '}
                   <Link
                     component='button'
                     type='button'
@@ -285,7 +289,7 @@ const LoginPage: React.FC = () => {
                       fontFamily: 'Nunito, sans-serif',
                     }}
                   >
-                    Sign Up
+                    {t('login.signUp')}
                   </Link>
                 </Typography>
                 <Typography
@@ -306,7 +310,7 @@ const LoginPage: React.FC = () => {
                       fontFamily: 'Nunito, sans-serif',
                     }}
                   >
-                    Forgot Password?
+                    {t('login.forgotPassword')}
                   </Link>
                 </Typography>
               </Box>
@@ -326,7 +330,7 @@ const LoginPage: React.FC = () => {
                   },
                 }}
               >
-                ← Back to Home
+                {t('login.backToHome')}
               </Button>
             </Box>
           </Paper>

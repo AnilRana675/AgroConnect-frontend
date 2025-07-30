@@ -14,14 +14,17 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   nepalDistricts,
   getDistrictsByProvince,
 } from '../constants/nepalDistricts';
 import { registrationService, authService } from '../services';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const SignUpPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   useEffect(() => {
     // Load sessionId from localStorage if present
     const savedSessionId = localStorage.getItem('registrationSessionId');
@@ -105,7 +108,7 @@ const SignUpPage: React.FC = () => {
       switch (step) {
         case 1:
           if (!formData.firstName || !formData.lastName) {
-            setError('First and Last Name are required.');
+            setError(t('signup.firstNameRequired'));
             return;
           }
           const step1Response = await registrationService.step1({
@@ -128,11 +131,11 @@ const SignUpPage: React.FC = () => {
 
         case 2:
           if (!formData.province) {
-            setError('Please select your province.');
+            setError(t('signup.selectProvinceError'));
             return;
           }
           if (!formData.location) {
-            setError('Please select your district.');
+            setError(t('signup.selectDistrictError'));
             return;
           }
           const sessionIdToSend =
@@ -148,7 +151,7 @@ const SignUpPage: React.FC = () => {
 
         case 3:
           if (!formData.farmerType) {
-            setError('Please select your farmer type.');
+            setError(t('signup.selectFarmerTypeError'));
             return;
           }
           await registrationService.step3({
@@ -160,7 +163,7 @@ const SignUpPage: React.FC = () => {
 
         case 4:
           if (!formData.economicScale) {
-            setError('Please select your economic scale.');
+            setError(t('signup.selectEconomicScaleError'));
             return;
           }
           await registrationService.step4({
@@ -172,7 +175,7 @@ const SignUpPage: React.FC = () => {
 
         case 5:
           if (!formData.email) {
-            setError('Email is required.');
+            setError(t('signup.emailRequired'));
             return;
           }
           await registrationService.step5({
@@ -184,15 +187,15 @@ const SignUpPage: React.FC = () => {
 
         case 6:
           if (!formData.password || !formData.confirmPassword) {
-            setError('Please enter and confirm your password.');
+            setError(t('signup.passwordRequired'));
             return;
           }
           if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match.');
+            setError(t('signup.passwordsDontMatch'));
             return;
           }
           if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters.');
+            setError(t('signup.passwordTooShort'));
             return;
           }
 
@@ -204,9 +207,7 @@ const SignUpPage: React.FC = () => {
           });
 
           if (completeResponse.registrationComplete) {
-            setSuccess(
-              'Account created successfully! Redirecting to user dashboard...',
-            );
+            setSuccess(t('signup.accountCreated'));
             setTimeout(() => {
               navigate('/user');
             }, 2000);
@@ -221,7 +222,7 @@ const SignUpPage: React.FC = () => {
       setError('');
       if (step < 6) setStep(prev => prev + 1);
     } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
+      setError(err.message || t('signup.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -246,6 +247,7 @@ const SignUpPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
+      <LanguageSwitcher />
       {/* Background Image */}
       <Box
         sx={{
@@ -329,7 +331,7 @@ const SignUpPage: React.FC = () => {
                   fontFamily: 'Rubik, sans-serif',
                 }}
               >
-                Join AgroConnect
+                {t('signup.joinAgroConnect')}
               </Typography>
               <Typography
                 variant='body1'
@@ -339,7 +341,7 @@ const SignUpPage: React.FC = () => {
                   fontFamily: 'Nunito, sans-serif',
                 }}
               >
-                Create your account and start your farming journey
+                {t('signup.createAccount')}
               </Typography>
             </Box>
 
@@ -370,7 +372,7 @@ const SignUpPage: React.FC = () => {
                     fontFamily: 'Nunito, sans-serif',
                   }}
                 >
-                  Question {step} of 6
+                  {t('signup.questionOf', { step })}
                 </Typography>
               )}
               {step === 1 && (
@@ -379,12 +381,12 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    What is your name?
+                    {t('signup.whatIsYourName')}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                     <TextField
                       fullWidth
-                      label='First Name'
+                      label={t('signup.firstName')}
                       name='firstName'
                       value={formData.firstName}
                       onChange={handleChange}
@@ -392,14 +394,14 @@ const SignUpPage: React.FC = () => {
                     />
                     <TextField
                       fullWidth
-                      label='Middle Name (optional)'
+                      label={t('signup.middleName')}
                       name='middleName'
                       value={formData.middleName}
                       onChange={handleChange}
                     />
                     <TextField
                       fullWidth
-                      label='Last Name'
+                      label={t('signup.lastName')}
                       name='lastName'
                       value={formData.lastName}
                       onChange={handleChange}
@@ -414,12 +416,12 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    Which area are you located in?
+                    {t('signup.whichArea')}
                   </Typography>
                   <TextField
                     select
                     fullWidth
-                    label='Select your province'
+                    label={t('signup.selectProvince')}
                     name='province'
                     value={formData.province}
                     onChange={handleChange}
@@ -435,7 +437,7 @@ const SignUpPage: React.FC = () => {
                   <TextField
                     select
                     fullWidth
-                    label='Select your district'
+                    label={t('signup.selectDistrict')}
                     name='location'
                     value={formData.location}
                     onChange={handleChange}
@@ -460,12 +462,12 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    What type of agriculture are you primarily involved in?
+                    {t('signup.whatType')}
                   </Typography>
                   <TextField
                     select
                     fullWidth
-                    label='Select farmer type'
+                    label={t('signup.selectFarmerType')}
                     name='farmerType'
                     value={formData.farmerType}
                     onChange={handleChange}
@@ -486,12 +488,12 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    What is the economic scale of your agriculture?
+                    {t('signup.economicScale')}
                   </Typography>
                   <TextField
                     select
                     fullWidth
-                    label='Select economic scale'
+                    label={t('signup.selectEconomicScale')}
                     name='economicScale'
                     value={formData.economicScale}
                     onChange={handleChange}
@@ -512,11 +514,11 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    What is your email address?
+                    {t('signup.emailAddress')}
                   </Typography>
                   <TextField
                     fullWidth
-                    label='Email Address'
+                    label={t('signup.emailLabel')}
                     name='email'
                     type='email'
                     value={formData.email}
@@ -532,11 +534,11 @@ const SignUpPage: React.FC = () => {
                     variant='h6'
                     sx={{ mb: 2, fontFamily: 'Rubik, sans-serif' }}
                   >
-                    Create a password for your account.
+                    {t('signup.createPassword')}
                   </Typography>
                   <TextField
                     fullWidth
-                    label='Password'
+                    label={t('signup.password')}
                     name='password'
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
@@ -558,7 +560,7 @@ const SignUpPage: React.FC = () => {
                   />
                   <TextField
                     fullWidth
-                    label='Confirm Password'
+                    label={t('signup.confirmPassword')}
                     name='confirmPassword'
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
@@ -595,7 +597,7 @@ const SignUpPage: React.FC = () => {
                     onClick={handlePrev}
                     disabled={loading}
                   >
-                    Previous
+                    {t('signup.previous')}
                   </Button>
                 )}
                 {step < 6 && (
@@ -604,12 +606,14 @@ const SignUpPage: React.FC = () => {
                     onClick={handleNext}
                     disabled={loading}
                   >
-                    {loading ? 'Processing...' : 'Next'}
+                    {loading ? t('signup.processing') : t('signup.next')}
                   </Button>
                 )}
                 {step === 6 && (
                   <Button type='submit' variant='contained' disabled={loading}>
-                    {loading ? 'Creating Account...' : 'Finish & Sign Up'}
+                    {loading
+                      ? t('signup.creatingAccount')
+                      : t('signup.finishSignUp')}
                   </Button>
                 )}
               </Box>
@@ -621,7 +625,7 @@ const SignUpPage: React.FC = () => {
                 variant='body2'
                 sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
               >
-                Already have an account?{' '}
+                {t('signup.alreadyHaveAccount')}{' '}
                 <Link
                   component='button'
                   type='button'
@@ -636,7 +640,7 @@ const SignUpPage: React.FC = () => {
                     fontFamily: 'Nunito, sans-serif',
                   }}
                 >
-                  Sign In
+                  {t('signup.signIn')}
                 </Link>
               </Typography>
               <Typography
@@ -657,7 +661,7 @@ const SignUpPage: React.FC = () => {
                     fontFamily: 'Nunito, sans-serif',
                   }}
                 >
-                  Forgot Password?
+                  {t('signup.forgotPassword')}
                 </Link>
               </Typography>
               <Button
@@ -682,7 +686,7 @@ const SignUpPage: React.FC = () => {
                   },
                 }}
               >
-                ← Back to Home
+                {t('signup.backToHome')}
               </Button>
             </Box>
           </Paper>

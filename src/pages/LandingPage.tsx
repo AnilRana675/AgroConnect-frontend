@@ -1,9 +1,11 @@
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import backImg from '../assets/background.png';
 import farmerImg from '../assets/farmer.png';
 import logo from '../assets/agroSIDE.png';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 // TODO: Replace this with your own background image asset if desired
 
 // Helper to check login status and get user
@@ -23,6 +25,7 @@ function getLoggedInUser() {
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isButtonHovered, setIsButtonHovered] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
 
@@ -41,6 +44,7 @@ const LandingPage: React.FC = () => {
           overflow: 'hidden',
         }}
       >
+        <LanguageSwitcher />
         {/* Background Image */}
         <Box
           sx={{
@@ -84,7 +88,7 @@ const LandingPage: React.FC = () => {
           <Box sx={{ mb: 4 }}>
             <img
               src={logo}
-              alt='Logo'
+              alt={t('logo')}
               style={{
                 width: 250,
                 height: 'auto',
@@ -103,10 +107,10 @@ const LandingPage: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            Welcome back,{' '}
+            {t('landing.welcomeBack')}
             {user.personalInfo?.firstName ||
               user.personalInfo?.name ||
-              'Farmer'}
+              t('farmer')}
             !{' '}
             <span role='img' aria-label='smile'>
               😊
@@ -121,7 +125,7 @@ const LandingPage: React.FC = () => {
               textAlign: 'center',
             }}
           >
-            AgroConnect is waiting for you!
+            {t('landing.agroConnectWaiting')}
           </Typography>
           <Button
             variant='contained'
@@ -149,7 +153,7 @@ const LandingPage: React.FC = () => {
             onMouseEnter={() => setIsButtonHovered(true)}
             onMouseLeave={() => setIsButtonHovered(false)}
           >
-            Go to Dashboard
+            {t('landing.goToDashboard')}
           </Button>
         </Box>
       </Box>
@@ -166,6 +170,7 @@ const LandingPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
+      <LanguageSwitcher />
       {/* Background Image - You can replace the URL in backgroundImage with your own asset */}
       <Box
         sx={{
@@ -219,7 +224,7 @@ const LandingPage: React.FC = () => {
           >
             <img
               src={logo}
-              alt='Logo'
+              alt={t('logo')}
               style={{
                 width: '100%',
                 height: 'auto',
@@ -260,8 +265,25 @@ const LandingPage: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: { xs: 'center', md: 'flex-start' },
+                position: 'relative',
+                zIndex: 2,
               }}
             >
+              {/* Transparent grey background for better text readability */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: { xs: -20, sm: -30, md: -40 },
+                  left: { xs: -20, sm: -30, md: -40 },
+                  right: { xs: -20, sm: -30, md: -40 },
+                  bottom: { xs: -20, sm: -30, md: -40 },
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: 4,
+                  backdropFilter: 'blur(3px)',
+                  zIndex: -1,
+                  padding: { xs: 3, sm: 4, md: 5 },
+                }}
+              />
               <Typography
                 variant='h4'
                 sx={{
@@ -274,7 +296,7 @@ const LandingPage: React.FC = () => {
                   mt: { xs: 10, sm: 6, md: 2, lg: 0 },
                 }}
               >
-                Grow Your Farm, Grow Your Knowledge.
+                {t('landing.mainHeading')}
               </Typography>
               <Typography
                 variant='h6'
@@ -288,11 +310,7 @@ const LandingPage: React.FC = () => {
                   fontFamily: 'Nunito, sans-serif',
                 }}
               >
-                This platform empowers farmers with essential knowledge and
-                innovative tools. Gain valuable insights, and achieve better
-                harvests. Whether you seek modern techniques, market trends, or
-                solutions to common farming challenges, we're here to help you
-                cultivate success and grow. <br />
+                {t('landing.description')} <br />
               </Typography>
               {/* Move Get Started Button here for better flow */}
               <Button
@@ -331,7 +349,7 @@ const LandingPage: React.FC = () => {
                     fontSize: '2rem',
                   }}
                 >
-                  Get Started
+                  {t('landing.getStarted')}
                   <span
                     style={{
                       marginLeft: isButtonHovered ? 16 : 0,
@@ -361,7 +379,7 @@ const LandingPage: React.FC = () => {
             >
               <img
                 src={farmerImg}
-                alt='Farmer'
+                alt={t('farmerIllustration')}
                 style={{
                   width: '100%',
                   maxWidth: 500,

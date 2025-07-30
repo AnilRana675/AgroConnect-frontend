@@ -15,10 +15,8 @@ import {
   CardContent,
   Chip,
   Paper,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import MicIcon from '@mui/icons-material/Mic';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -30,7 +28,6 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import WarningIcon from '@mui/icons-material/Warning';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import InfoIcon from '@mui/icons-material/Info';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import GrassIcon from '@mui/icons-material/Grass';
@@ -38,7 +35,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import EcoIcon from '@mui/icons-material/Nature';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
-import axios from 'axios';
+import api from '../services/api';
 import authService from '../services/authService';
 import plantService, {
   PlantIdentificationResult,
@@ -309,13 +306,14 @@ const extractSectionContent = (content: string, keywords: string[]) => {
     : 'No specific information available.';
 };
 
-const navItems = [
-  { label: 'Question' },
-  { label: 'Message' },
-  { label: 'Image Query' },
-];
-
 const UserPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
+
+  const navItems = [
+    { label: t('user.question') },
+    { label: t('user.message') },
+    { label: t('user.imageQuery') },
+  ];
   // Real user profile state
   const [userProfile, setUserProfile] = useState<any>(null);
   // Track if this is the user's first visit (simulate with state)
@@ -324,13 +322,38 @@ const UserPage: React.FC = () => {
     return !(storedUser && storedUser.onboardingStatus);
   });
   // Track which nav item is selected
-  const [selectedNav, setSelectedNav] = useState('Question');
+  const [selectedNav, setSelectedNav] = useState(t('user.question'));
+
+  // Update selectedNav when language changes to maintain consistency
+  React.useEffect(() => {
+    // Map the current selectedNav to the new language
+    if (selectedNav === 'Question' || selectedNav === 'प्रश्न') {
+      setSelectedNav(t('user.question'));
+    } else if (selectedNav === 'Messages' || selectedNav === 'सन्देश') {
+      setSelectedNav(t('user.message'));
+    } else if (
+      selectedNav === 'Image Query' ||
+      selectedNav === 'तस्बिरबाट प्रश्न'
+    ) {
+      setSelectedNav(t('user.imageQuery'));
+    } else if (
+      selectedNav === 'FAQ' ||
+      selectedNav === 'बारम्बार सोधिने प्रश्नहरू'
+    ) {
+      setSelectedNav(t('user.faq'));
+    } else if (
+      selectedNav === 'User Info' ||
+      selectedNav === 'प्रयोगकर्ता जानकारी'
+    ) {
+      setSelectedNav(t('user.userInfo'));
+    }
+  }, [i18n.language, t, selectedNav]);
 
   // First-time prompt options
   const promptOptions = [
-    'I AM NEW TO FARMING',
-    'I ALREADY HAVE AN ESTABLISHED FARM',
-    'I AM LOOKING FOR NEW IDEAS & TRENDS',
+    t('user.newToFarming'),
+    t('user.establishedFarm'),
+    t('user.lookingForIdeas'),
   ];
 
   // Chat state
@@ -360,6 +383,28 @@ const UserPage: React.FC = () => {
     useState<PlantIdentificationResult | null>(null);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [imageError, setImageError] = useState<string>('');
+  const [selectedGuideSection, setSelectedGuideSection] = useState<string>('');
+
+  // Update selectedGuideSection when language changes to maintain consistency
+  React.useEffect(() => {
+    // Map the current selectedGuideSection to the new language
+    if (
+      selectedGuideSection === 'Scientific Classification' ||
+      selectedGuideSection === 'वैज्ञानिक वर्गीकरण'
+    ) {
+      setSelectedGuideSection('Scientific Classification');
+    } else if (
+      selectedGuideSection === 'Common Names' ||
+      selectedGuideSection === 'सामान्य नामहरू'
+    ) {
+      setSelectedGuideSection('Common Names');
+    } else if (
+      selectedGuideSection === 'Confidence Level' ||
+      selectedGuideSection === 'विश्वसनीयताको स्तर'
+    ) {
+      setSelectedGuideSection('Confidence Level');
+    }
+  }, [i18n.language, selectedGuideSection]);
 
   // Fetch user profile on mount
   React.useEffect(() => {
@@ -426,7 +471,7 @@ const UserPage: React.FC = () => {
         return;
       }
       // Send onboarding status to backend
-      await axios.post(`/api/users/${user._id}/onboarding`, {
+      await api.post(`/users/${user._id}/onboarding`, {
         onboardingStatus: option,
       });
       // Update onboardingStatus in localStorage
@@ -437,17 +482,14 @@ const UserPage: React.FC = () => {
       setFirstVisit(false);
       // Add a personalized AgroBOT message based on the selected option
       let botMessage = '';
-      if (option === 'I AM NEW TO FARMING') {
-        botMessage =
-          'Welcome to AgroConnect! I am AgroBOT, here to guide you as you begin your farming journey. Ask me anything to get started!';
-      } else if (option === 'I ALREADY HAVE AN ESTABLISHED FARM') {
-        botMessage =
-          'Welcome back to AgroConnect! I am AgroBOT. Let me know what you need help with to grow your established farm.';
-      } else if (option === 'I AM LOOKING FOR NEW IDEAS & TRENDS') {
-        botMessage =
-          'Hi! I am AgroBOT. I can help you discover new ideas, trends, and innovations in agriculture. What would you like to explore today?';
+      if (option === t('user.newToFarming')) {
+        botMessage = t('user.welcomeNewFarming');
+      } else if (option === t('user.establishedFarm')) {
+        botMessage = t('user.welcomeEstablishedFarm');
+      } else if (option === t('user.lookingForIdeas')) {
+        botMessage = t('user.welcomeLookingForIdeas');
       } else {
-        botMessage = 'Hello! I am AgroBOT. How can I assist you today?';
+        botMessage = t('user.welcomeDefault');
       }
       setMessages([{ from: 'bot', text: botMessage }]);
     } catch (error) {
@@ -460,37 +502,58 @@ const UserPage: React.FC = () => {
   // Handle sending a chat message
   const handleSend = async () => {
     if (input.trim()) {
-      setMessages([...messages, { from: 'user', text: input }]);
+      const userMessage = { from: 'user' as const, text: input };
+      setMessages(prev => [...prev, userMessage]);
       setInput('');
       const user = authService.getStoredUser();
       if (!user || !user._id) {
         setMessages(prev => [
           ...prev,
-          { from: 'bot', text: 'User not found. Please log in again.' },
+          { from: 'bot', text: t('user.userNotFound') },
         ]);
         return;
       }
       // Show loading message
       setMessages(prev => [
         ...prev,
-        { from: 'bot', text: 'AgroBOT is thinking...' },
+        { from: 'bot', text: t('user.agroBOTThinking') },
       ]);
       try {
-        const res = await axios.post('/api/ai/ask', {
+        console.log('Sending question to API:', input);
+        console.log('User ID:', user._id);
+
+        const res = await api.post('/ai/ask', {
           question: input,
           userId: user._id,
         });
-        // Remove loading message and add AI response
-        setMessages(prev => [
-          ...prev.slice(0, -1),
-          { from: 'bot', text: res.data.data.answer },
-        ]);
-      } catch (err) {
+
+        console.log('API Response:', res.data);
+
+        // Check if the response has the expected structure
+        if (res.data && res.data.data && res.data.data.answer) {
+          // Remove loading message and add AI response
+          setMessages(prev => [
+            ...prev.slice(0, -1),
+            { from: 'bot', text: res.data.data.answer },
+          ]);
+        } else {
+          console.error('Unexpected API response structure:', res.data);
+          setMessages(prev => [
+            ...prev.slice(0, -1),
+            {
+              from: 'bot',
+              text: t('user.agroBOTError'),
+            },
+          ]);
+        }
+      } catch (err: any) {
+        console.error('API Error:', err);
+        console.error('Error response:', err.response?.data);
         setMessages(prev => [
           ...prev.slice(0, -1),
           {
             from: 'bot',
-            text: 'Sorry, AgroBOT could not answer your question.',
+            text: t('user.agroBOTError'),
           },
         ]);
       }
@@ -500,7 +563,7 @@ const UserPage: React.FC = () => {
   // Fetch personalized messages (weekly tips) when 'Message' tab is selected
   React.useEffect(() => {
     const fetchTips = async () => {
-      if (selectedNav !== 'Message') return;
+      if (selectedNav !== t('user.message')) return;
 
       const user = authService.getStoredUser();
       if (!user || !user._id) {
@@ -525,7 +588,7 @@ const UserPage: React.FC = () => {
       setTipsLoading(true);
       setTipsError('');
       try {
-        const res = await axios.get(`/api/ai/weekly-tips/${user._id}`);
+        const res = await api.get(`/ai/weekly-tips/${user._id}`);
         const tips = res.data.data?.tips || 'No tips available.';
         setPersonalizedTips(tips);
         setLastTipsFetch(now);
@@ -547,7 +610,7 @@ const UserPage: React.FC = () => {
       }
     };
     fetchTips();
-  }, [selectedNav, personalizedTips, lastTipsFetch]);
+  }, [selectedNav, personalizedTips, lastTipsFetch, t]);
 
   // Image handling functions
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -582,7 +645,7 @@ const UserPage: React.FC = () => {
 
   const handlePlantIdentification = async () => {
     if (!selectedImage) {
-      setImageError('Please select an image first');
+      setImageError(t('user.pleaseSelectImage'));
       return;
     }
 
@@ -597,13 +660,14 @@ const UserPage: React.FC = () => {
       const result = await plantService.identifyPlant(base64Image);
 
       setPlantResult(result);
+      setSelectedGuideSection(''); // Reset selected section for new plant
 
       if (!result.success) {
-        setImageError(result.error || 'Failed to identify plant');
+        setImageError(result.error || t('user.identificationFailed'));
       }
     } catch (error) {
       console.error('Plant identification error:', error);
-      setImageError('An error occurred while identifying the plant');
+      setImageError(t('user.identificationError'));
     } finally {
       setIsIdentifying(false);
     }
@@ -655,7 +719,7 @@ const UserPage: React.FC = () => {
               mb: 2,
             }}
           >
-            Let’s help you get started…
+            Let's help you get started…
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {promptOptions.map(option => (
@@ -692,10 +756,10 @@ const UserPage: React.FC = () => {
           bgcolor: 'rgba(20,30,10,0.85)',
           borderRadius: 8,
           boxShadow: 6,
-          px: { xs: 2, sm: 8 },
+          px: { xs: 1, sm: 8 },
           py: { xs: 4, sm: 6 },
-          minWidth: { xs: '90vw', sm: 500 },
-          maxWidth: 900,
+          minWidth: { xs: '95vw', sm: 500 },
+          maxWidth: { xs: '95vw', sm: 900 },
           mx: 'auto',
           textAlign: 'center',
           border: '2px solid #2196f3',
@@ -704,7 +768,7 @@ const UserPage: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        {selectedNav === 'UserInfo' && userProfile && (
+        {selectedNav === t('user.userInfo') && userProfile && (
           <Box
             sx={{
               width: 'auto',
@@ -767,7 +831,8 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>Province:</b> {userProfile.locationInfo?.province || 'N/A'}
+              <b>{t('user.province')}</b>{' '}
+              {userProfile.locationInfo?.province || 'N/A'}
             </Typography>
             <Typography
               sx={{
@@ -777,7 +842,8 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>District:</b> {userProfile.locationInfo?.district || 'N/A'}
+              <b>{t('user.district')}</b>{' '}
+              {userProfile.locationInfo?.district || 'N/A'}
             </Typography>
             <Typography
               sx={{
@@ -787,7 +853,7 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>Type of Farmer (Sector):</b>{' '}
+              <b>{t('user.typeOfFarmer')}</b>{' '}
               {userProfile.farmInfo?.farmerType || 'N/A'}
             </Typography>
             <Typography
@@ -798,7 +864,7 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>Economic Scale of Farming:</b>{' '}
+              <b>{t('user.economicScaleOfFarming')}</b>{' '}
               {userProfile.farmInfo?.economicScale || 'N/A'}
             </Typography>
             <Typography
@@ -809,7 +875,7 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>Current Level of Farmer:</b>{' '}
+              <b>{t('user.currentLevelOfFarmer')}</b>{' '}
               {getFarmerLevelLabel(userProfile.onboardingStatus)}
             </Typography>
             <Typography
@@ -820,18 +886,19 @@ const UserPage: React.FC = () => {
                 mb: 1,
               }}
             >
-              <b>Email:</b> {userProfile.loginCredentials?.email || 'N/A'}
+              <b>{t('user.email')}</b>{' '}
+              {userProfile.loginCredentials?.email || 'N/A'}
             </Typography>
           </Box>
         )}
-        {selectedNav === 'Question' && (
+        {selectedNav === t('user.question') && (
           <>
             {/* Chatbot UI */}
             <Typography
               variant='h3'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
             >
-              AgroBOT
+              {t('user.agroBOT')}
             </Typography>
             <Box
               sx={{
@@ -866,24 +933,59 @@ const UserPage: React.FC = () => {
                     mt: 8,
                   }}
                 >
-                  Start the conversation by typing your question below.
+                  {t('user.startConversation')}
                 </Typography>
               ) : (
                 messages.map((msg, idx) => (
-                  <Typography
+                  <Box
                     key={idx}
-                    align={msg.from === 'user' ? 'right' : 'left'}
                     sx={{
-                      color: msg.from === 'user' ? '#fff' : '#b2ff59',
-                      fontFamily: 'Nunito, sans-serif',
-                      mb: 1,
-                      whiteSpace: 'pre-line',
-                      wordBreak: 'break-word',
+                      display: 'flex',
+                      justifyContent:
+                        msg.from === 'user' ? 'flex-end' : 'flex-start',
+                      mb: 2,
+                      width: '100%',
                     }}
                   >
-                    {msg.from === 'bot' ? <b>AgroBOT: </b> : null}
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  </Typography>
+                    <Box
+                      sx={{
+                        maxWidth: '80%',
+                        bgcolor:
+                          msg.from === 'user'
+                            ? '#4A7C1B'
+                            : 'rgba(255,255,255,0.1)',
+                        borderRadius: 3,
+                        px: 2,
+                        py: 1,
+                        boxShadow: 1,
+                        border:
+                          msg.from === 'user'
+                            ? 'none'
+                            : '1px solid rgba(255,255,255,0.2)',
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: msg.from === 'user' ? 'white' : '#b2ff59',
+                          fontFamily: 'Nunito, sans-serif',
+                          fontSize: 14,
+                          lineHeight: 1.4,
+                          whiteSpace: 'pre-line',
+                          wordBreak: 'break-word',
+                          textAlign: msg.from === 'user' ? 'right' : 'left',
+                        }}
+                      >
+                        {msg.from === 'bot' && <b>AgroBOT: </b>}
+                        {msg.from === 'user' && (
+                          <b>
+                            {userProfile?.personalInfo?.firstName || 'You'}
+                            :{' '}
+                          </b>
+                        )}
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                      </Typography>
+                    </Box>
+                  </Box>
                 ))
               )}
             </Box>
@@ -902,7 +1004,7 @@ const UserPage: React.FC = () => {
               }}
             >
               <InputBase
-                placeholder='Type your query here...'
+                placeholder={t('user.typeQuery')}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
@@ -919,7 +1021,7 @@ const UserPage: React.FC = () => {
             </Box>
           </>
         )}
-        {selectedNav === 'Message' && (
+        {selectedNav === t('user.message') && (
           <Box
             sx={{
               width: '100%',
@@ -1005,7 +1107,8 @@ const UserPage: React.FC = () => {
                           maxWidth: '100%',
                         }}
                       >
-                        <b>AgroBOT:</b> <ReactMarkdown>{tip}</ReactMarkdown>
+                        <b>{t('user.agroBOT')}:</b>{' '}
+                        <ReactMarkdown>{tip}</ReactMarkdown>
                       </Typography>
                     ))}
                 </Box>
@@ -1017,28 +1120,29 @@ const UserPage: React.FC = () => {
                     textAlign: 'center',
                   }}
                 >
-                  No personalized messages yet.
+                  {t('user.noMessages')}
                 </Typography>
               )}
             </Box>
           </Box>
         )}
-        {selectedNav === 'Image Query' && (
+        {selectedNav === t('user.imageQuery') && (
           <Box
             sx={{
               width: '100%',
-              maxWidth: 800,
+              maxWidth: { xs: '95vw', sm: 800 },
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: 3,
+              px: { xs: 1, sm: 2 },
             }}
           >
             <Typography
               variant='h3'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
             >
-              Plant Identification
+              {t('user.plantIdentification')}
             </Typography>
 
             <Typography
@@ -1049,8 +1153,7 @@ const UserPage: React.FC = () => {
                 mb: 2,
               }}
             >
-              Upload an image of a plant to get identification and agricultural
-              guidance
+              {t('user.uploadImageDescription')}
             </Typography>
 
             {/* Image Upload Section */}
@@ -1094,7 +1197,7 @@ const UserPage: React.FC = () => {
                           fontSize: 16,
                         }}
                       >
-                        Click to upload an image
+                        {t('user.clickToUpload')}
                       </Typography>
                       <Typography
                         sx={{
@@ -1103,7 +1206,7 @@ const UserPage: React.FC = () => {
                           fontSize: 12,
                         }}
                       >
-                        Supports JPEG, PNG, GIF, WebP (max 10MB)
+                        {t('user.imageSupport')}
                       </Typography>
                     </Box>
                   </label>
@@ -1147,10 +1250,10 @@ const UserPage: React.FC = () => {
                             color='inherit'
                             sx={{ mr: 1 }}
                           />
-                          Identifying...
+                          {t('user.identifying')}
                         </>
                       ) : (
-                        'Identify Plant'
+                        t('user.identifyPlant')
                       )}
                     </Button>
                     <Button
@@ -1167,7 +1270,7 @@ const UserPage: React.FC = () => {
                         fontFamily: 'Nunito, sans-serif',
                       }}
                     >
-                      Remove
+                      {t('user.remove')}
                     </Button>
                   </Box>
                 </Box>
@@ -1186,7 +1289,7 @@ const UserPage: React.FC = () => {
               <Card
                 sx={{
                   width: '100%',
-                  maxWidth: 700,
+                  maxWidth: { xs: '95vw', sm: 700 },
                   bgcolor: 'rgba(255,255,255,0.98)',
                   borderRadius: 4,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
@@ -1218,7 +1321,7 @@ const UserPage: React.FC = () => {
                             mb: 0.5,
                           }}
                         >
-                          Plant Identified Successfully!
+                          {t('user.plantIdentifiedSuccessfully')}
                         </Typography>
                         <Typography
                           sx={{
@@ -1227,7 +1330,8 @@ const UserPage: React.FC = () => {
                             fontFamily: 'Nunito, sans-serif',
                           }}
                         >
-                          Analysis complete • {new Date().toLocaleDateString()}
+                          {t('user.analysisComplete')} •{' '}
+                          {new Date().toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
@@ -1253,221 +1357,6 @@ const UserPage: React.FC = () => {
 
                       {/* Main Content Grid */}
                       <Box sx={{ p: 3 }}>
-                        {/* Scientific Name Section */}
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 3,
-                            mb: 3,
-                            borderRadius: 3,
-                            border: '1px solid #e0e0e0',
-                            background:
-                              'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 2,
-                            }}
-                          >
-                            <ScienceIcon sx={{ color: '#1976d2', mr: 1 }} />
-                            <Typography
-                              variant='h6'
-                              sx={{
-                                color: '#1976d2',
-                                fontFamily: 'Rubik, sans-serif',
-                                fontWeight: 'bold',
-                              }}
-                            >
-                              Scientific Classification
-                            </Typography>
-                          </Box>
-                          <Typography
-                            sx={{
-                              color: '#2c3e50',
-                              fontFamily: 'Georgia, serif',
-                              fontStyle: 'italic',
-                              fontSize: 20,
-                              fontWeight: 500,
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            {plantResult.data.scientificName ||
-                              'Unknown species'}
-                          </Typography>
-                        </Paper>
-
-                        {/* Common Names Section */}
-                        {plantResult.data.commonNames &&
-                          plantResult.data.commonNames.length > 0 && (
-                            <Paper
-                              elevation={1}
-                              sx={{
-                                p: 3,
-                                mb: 3,
-                                borderRadius: 3,
-                                border: '1px solid #e0e0e0',
-                                background:
-                                  'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  mb: 2,
-                                }}
-                              >
-                                <InfoIcon sx={{ color: '#4caf50', mr: 1 }} />
-                                <Typography
-                                  variant='h6'
-                                  sx={{
-                                    color: '#4caf50',
-                                    fontFamily: 'Rubik, sans-serif',
-                                    fontWeight: 'bold',
-                                  }}
-                                >
-                                  Common Names
-                                </Typography>
-                              </Box>
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  flexWrap: 'wrap',
-                                  gap: 1,
-                                }}
-                              >
-                                {plantResult.data.commonNames.map(
-                                  (name, index) => (
-                                    <Chip
-                                      key={index}
-                                      label={name}
-                                      variant='outlined'
-                                      sx={{
-                                        fontFamily: 'Nunito, sans-serif',
-                                        fontSize: 14,
-                                        fontWeight: 500,
-                                        borderColor: '#4caf50',
-                                        color: '#2e7d32',
-                                        '&:hover': {
-                                          backgroundColor: '#e8f5e8',
-                                        },
-                                      }}
-                                    />
-                                  ),
-                                )}
-                              </Box>
-                            </Paper>
-                          )}
-
-                        {/* Confidence Level Section */}
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 3,
-                            mb: 3,
-                            borderRadius: 3,
-                            border: '1px solid #e0e0e0',
-                            background:
-                              'linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%)',
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mb: 2,
-                            }}
-                          >
-                            <VerifiedIcon sx={{ color: '#ff9800', mr: 1 }} />
-                            <Typography
-                              variant='h6'
-                              sx={{
-                                color: '#ff9800',
-                                fontFamily: 'Rubik, sans-serif',
-                                fontWeight: 'bold',
-                              }}
-                            >
-                              Confidence Level
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 2,
-                            }}
-                          >
-                            <Typography
-                              sx={{
-                                color:
-                                  plantResult.data.confidence > 70
-                                    ? '#2e7d32'
-                                    : plantResult.data.confidence > 40
-                                      ? '#f57c00'
-                                      : '#d32f2f',
-                                fontFamily: 'Rubik, sans-serif',
-                                fontSize: 24,
-                                fontWeight: 'bold',
-                              }}
-                            >
-                              {plantResult.data.confidence}%
-                            </Typography>
-                            <Chip
-                              label={
-                                plantResult.data.confidence > 70
-                                  ? 'High Confidence'
-                                  : plantResult.data.confidence > 40
-                                    ? 'Medium Confidence'
-                                    : 'Low Confidence'
-                              }
-                              size='small'
-                              sx={{
-                                backgroundColor:
-                                  plantResult.data.confidence > 70
-                                    ? '#e8f5e8'
-                                    : plantResult.data.confidence > 40
-                                      ? '#fff3e0'
-                                      : '#ffebee',
-                                color:
-                                  plantResult.data.confidence > 70
-                                    ? '#2e7d32'
-                                    : plantResult.data.confidence > 40
-                                      ? '#f57c00'
-                                      : '#d32f2f',
-                                fontWeight: 'bold',
-                              }}
-                            />
-                          </Box>
-                          {/* Confidence Bar */}
-                          <Box
-                            sx={{
-                              width: '100%',
-                              height: 8,
-                              backgroundColor: '#e0e0e0',
-                              borderRadius: 4,
-                              mt: 2,
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: `${plantResult.data.confidence}%`,
-                                height: '100%',
-                                background:
-                                  plantResult.data.confidence > 70
-                                    ? 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
-                                    : plantResult.data.confidence > 40
-                                      ? 'linear-gradient(90deg, #ff9800 0%, #f57c00 100%)'
-                                      : 'linear-gradient(90deg, #f44336 0%, #d32f2f 100%)',
-                                transition: 'width 0.3s ease-in-out',
-                              }}
-                            />
-                          </Box>
-                        </Paper>
-
                         {/* Agricultural Guide Section */}
                         {plantResult.data.agriGuide && (
                           <Paper
@@ -1497,176 +1386,648 @@ const UserPage: React.FC = () => {
                                   fontWeight: 'bold',
                                 }}
                               >
-                                Agricultural Guide
+                                {t('user.agriculturalGuide')}
                               </Typography>
                             </Box>
-                            <Box sx={{ backgroundColor: '#fafafa' }}>
-                              {parseAgriculturalGuide(
-                                plantResult.data?.agriGuide || '',
-                              ).map((section, index) => {
-                                const IconComponent = section.icon;
+                            <Box
+                              sx={{
+                                backgroundColor: '#fafafa',
+                                minHeight: 300,
+                              }}
+                            >
+                              {(() => {
+                                const sections = parseAgriculturalGuide(
+                                  plantResult.data?.agriGuide || '',
+                                );
+
+                                // Debug logging
+                                console.log(
+                                  'Agricultural Guide Data:',
+                                  plantResult.data?.agriGuide,
+                                );
+                                console.log('Parsed Sections:', sections);
+
+                                // Set default selected section if none is selected
+                                if (!selectedGuideSection) {
+                                  setSelectedGuideSection(
+                                    'Scientific Classification',
+                                  );
+                                }
+
+                                const currentSection =
+                                  sections.find(
+                                    section =>
+                                      section.title === selectedGuideSection,
+                                  ) || sections[0];
+
                                 return (
-                                  <Accordion
-                                    key={index}
-                                    defaultExpanded={index === 0}
-                                    sx={{
-                                      '&:before': { display: 'none' },
-                                      boxShadow: 'none',
-                                      borderBottom:
-                                        index <
-                                        parseAgriculturalGuide(
-                                          plantResult.data?.agriGuide || '',
-                                        ).length -
-                                          1
-                                          ? '1px solid #e0e0e0'
-                                          : 'none',
-                                    }}
-                                  >
-                                    <AccordionSummary
-                                      expandIcon={<ExpandMoreIcon />}
+                                  <>
+                                    {/* Content Area */}
+                                    <Box
                                       sx={{
+                                        p: 3,
+                                        minHeight: 250,
+                                        maxHeight: 400,
+                                        overflowY: 'auto',
+                                      }}
+                                    >
+                                      {selectedGuideSection ===
+                                        'Scientific Classification' && (
+                                        <Box>
+                                          <Typography
+                                            sx={{
+                                              color: '#2c3e50',
+                                              fontFamily: 'Georgia, serif',
+                                              fontStyle: 'italic',
+                                              fontSize: 24,
+                                              fontWeight: 500,
+                                              letterSpacing: 0.5,
+                                              textAlign: 'center',
+                                              mb: 2,
+                                            }}
+                                          >
+                                            {plantResult.data.scientificName ||
+                                              'Unknown species'}
+                                          </Typography>
+                                          <Typography
+                                            sx={{
+                                              color: '#666',
+                                              fontFamily: 'Nunito, sans-serif',
+                                              fontSize: 14,
+                                              textAlign: 'center',
+                                            }}
+                                          >
+                                            Scientific name of the identified
+                                            plant
+                                          </Typography>
+                                        </Box>
+                                      )}
+
+                                      {selectedGuideSection ===
+                                        'Common Names' && (
+                                        <Box>
+                                          <Typography
+                                            variant='h6'
+                                            sx={{
+                                              color: '#4caf50',
+                                              fontFamily: 'Rubik, sans-serif',
+                                              fontWeight: 'bold',
+                                              mb: 2,
+                                            }}
+                                          >
+                                            {t('user.commonNames')}
+                                          </Typography>
+                                          <Box
+                                            sx={{
+                                              display: 'flex',
+                                              flexWrap: 'wrap',
+                                              gap: 1,
+                                              justifyContent: 'center',
+                                            }}
+                                          >
+                                            {plantResult.data.commonNames &&
+                                            plantResult.data.commonNames
+                                              .length > 0 ? (
+                                              plantResult.data.commonNames.map(
+                                                (name, index) => (
+                                                  <Chip
+                                                    key={index}
+                                                    label={name}
+                                                    variant='outlined'
+                                                    sx={{
+                                                      fontFamily:
+                                                        'Nunito, sans-serif',
+                                                      fontSize: 14,
+                                                      fontWeight: 500,
+                                                      borderColor: '#4caf50',
+                                                      color: '#2e7d32',
+                                                      '&:hover': {
+                                                        backgroundColor:
+                                                          '#e8f5e8',
+                                                      },
+                                                    }}
+                                                  />
+                                                ),
+                                              )
+                                            ) : (
+                                              <Typography
+                                                sx={{
+                                                  color: '#666',
+                                                  fontStyle: 'italic',
+                                                }}
+                                              >
+                                                No common names available
+                                              </Typography>
+                                            )}
+                                          </Box>
+                                        </Box>
+                                      )}
+
+                                      {selectedGuideSection ===
+                                        'Confidence Level' && (
+                                        <Box sx={{ textAlign: 'center' }}>
+                                          <Typography
+                                            sx={{
+                                              color:
+                                                plantResult.data.confidence > 70
+                                                  ? '#2e7d32'
+                                                  : plantResult.data
+                                                        .confidence > 40
+                                                    ? '#f57c00'
+                                                    : '#d32f2f',
+                                              fontFamily: 'Rubik, sans-serif',
+                                              fontSize: 48,
+                                              fontWeight: 'bold',
+                                              mb: 2,
+                                            }}
+                                          >
+                                            {plantResult.data.confidence}%
+                                          </Typography>
+                                          <Chip
+                                            label={
+                                              plantResult.data.confidence > 70
+                                                ? t('user.highConfidence')
+                                                : plantResult.data.confidence >
+                                                    40
+                                                  ? t('user.mediumConfidence')
+                                                  : t('user.lowConfidence')
+                                            }
+                                            size='medium'
+                                            sx={{
+                                              backgroundColor:
+                                                plantResult.data.confidence > 70
+                                                  ? '#e8f5e8'
+                                                  : plantResult.data
+                                                        .confidence > 40
+                                                    ? '#fff3e0'
+                                                    : '#ffebee',
+                                              color:
+                                                plantResult.data.confidence > 70
+                                                  ? '#2e7d32'
+                                                  : plantResult.data
+                                                        .confidence > 40
+                                                    ? '#f57c00'
+                                                    : '#d32f2f',
+                                              fontWeight: 'bold',
+                                              fontSize: 16,
+                                              mb: 3,
+                                            }}
+                                          />
+                                          {/* Confidence Bar */}
+                                          <Box
+                                            sx={{
+                                              width: '100%',
+                                              height: 12,
+                                              backgroundColor: '#e0e0e0',
+                                              borderRadius: 6,
+                                              overflow: 'hidden',
+                                            }}
+                                          >
+                                            <Box
+                                              sx={{
+                                                width: `${plantResult.data.confidence}%`,
+                                                height: '100%',
+                                                background:
+                                                  plantResult.data.confidence >
+                                                  70
+                                                    ? 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
+                                                    : plantResult.data
+                                                          .confidence > 40
+                                                      ? 'linear-gradient(90deg, #ff9800 0%, #f57c00 100%)'
+                                                      : 'linear-gradient(90deg, #f44336 0%, #d32f2f 100%)',
+                                                transition:
+                                                  'width 0.3s ease-in-out',
+                                              }}
+                                            />
+                                          </Box>
+                                        </Box>
+                                      )}
+
+                                      {currentSection &&
+                                        selectedGuideSection !==
+                                          'Scientific Classification' &&
+                                        selectedGuideSection !==
+                                          'Common Names' &&
+                                        selectedGuideSection !==
+                                          'Confidence Level' && (
+                                          <Box
+                                            sx={{
+                                              textAlign: 'left',
+                                              width: '100%',
+                                              '& p': {
+                                                margin: '8px 0',
+                                                fontFamily:
+                                                  'Nunito, sans-serif',
+                                                lineHeight: 1.6,
+                                                color: '#333',
+                                                fontSize: '14px',
+                                                textAlign: 'left',
+                                              },
+                                              '& ul, & ol': {
+                                                margin: '8px 0',
+                                                paddingLeft: 24,
+                                                marginLeft: 0,
+                                                textAlign: 'left',
+                                                fontFamily:
+                                                  'Nunito, sans-serif',
+                                                listStylePosition: 'outside',
+                                                direction: 'ltr',
+                                              },
+                                              '& li': {
+                                                marginBottom: 4,
+                                                lineHeight: 1.5,
+                                                color: '#555',
+                                                fontSize: '14px',
+                                                textAlign: 'left',
+                                                listStylePosition: 'outside',
+                                                direction: 'ltr',
+                                                paddingLeft: 0,
+                                                marginLeft: 0,
+                                              },
+                                              '& h1, & h2, & h3, & h4, & h5, & h6':
+                                                {
+                                                  color: currentSection.color,
+                                                  marginTop: 12,
+                                                  marginBottom: 8,
+                                                  fontFamily:
+                                                    'Rubik, sans-serif',
+                                                  fontWeight: 'bold',
+                                                  fontSize: '16px',
+                                                },
+                                              '& strong': {
+                                                color: currentSection.color,
+                                                fontWeight: 'bold',
+                                              },
+                                              '& em': {
+                                                color: '#666',
+                                                fontStyle: 'italic',
+                                              },
+                                            }}
+                                          >
+                                            <ReactMarkdown
+                                              components={{
+                                                ul: ({ children }) => (
+                                                  <ul
+                                                    style={{
+                                                      textAlign: 'left',
+                                                      paddingLeft: '24px',
+                                                      marginLeft: 0,
+                                                      listStylePosition:
+                                                        'outside',
+                                                    }}
+                                                  >
+                                                    {children}
+                                                  </ul>
+                                                ),
+                                                ol: ({ children }) => (
+                                                  <ol
+                                                    style={{
+                                                      textAlign: 'left',
+                                                      paddingLeft: '24px',
+                                                      marginLeft: 0,
+                                                      listStylePosition:
+                                                        'outside',
+                                                    }}
+                                                  >
+                                                    {children}
+                                                  </ol>
+                                                ),
+                                                li: ({ children }) => (
+                                                  <li
+                                                    style={{
+                                                      textAlign: 'left',
+                                                      listStylePosition:
+                                                        'outside',
+                                                      marginLeft: 0,
+                                                      paddingLeft: 0,
+                                                    }}
+                                                  >
+                                                    {children}
+                                                  </li>
+                                                ),
+                                              }}
+                                            >
+                                              {currentSection.content.trim() ||
+                                                'No specific information available for this section.'}
+                                            </ReactMarkdown>
+                                          </Box>
+                                        )}
+                                    </Box>
+
+                                    {/* Bottom Navigation Bar */}
+                                    <Box
+                                      sx={{
+                                        borderTop: '1px solid #e0e0e0',
                                         backgroundColor: 'white',
-                                        borderLeft: `4px solid ${section.color}`,
-                                        '&:hover': {
-                                          backgroundColor: '#f5f5f5',
+                                        overflowX: 'auto',
+                                        maxWidth: '100%',
+                                        '&::-webkit-scrollbar': {
+                                          height: 4,
+                                        },
+                                        '&::-webkit-scrollbar-track': {
+                                          backgroundColor: '#f1f1f1',
+                                        },
+                                        '&::-webkit-scrollbar-thumb': {
+                                          backgroundColor: '#c1c1c1',
+                                          borderRadius: 2,
                                         },
                                       }}
                                     >
                                       <Box
                                         sx={{
                                           display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 1.5,
+                                          gap: { xs: 0.5, sm: 1 },
+                                          p: { xs: 0.5, sm: 1 },
+                                          minWidth: 'max-content',
+                                          maxWidth: '100%',
                                         }}
                                       >
-                                        <IconComponent
+                                        {/* Scientific Classification Button */}
+                                        <Button
+                                          onClick={() =>
+                                            setSelectedGuideSection(
+                                              'Scientific Classification',
+                                            )
+                                          }
+                                          variant={
+                                            selectedGuideSection ===
+                                            'Scientific Classification'
+                                              ? 'contained'
+                                              : 'outlined'
+                                          }
+                                          size='small'
                                           sx={{
-                                            color: section.color,
-                                            fontSize: 24,
-                                          }}
-                                        />
-                                        <Typography
-                                          variant='subtitle1'
-                                          sx={{
-                                            fontFamily: 'Rubik, sans-serif',
-                                            fontWeight: 'bold',
-                                            color: section.color,
-                                          }}
-                                        >
-                                          {section.title ||
-                                            `Section ${index + 1}`}
-                                        </Typography>
-                                      </Box>
-                                    </AccordionSummary>
-                                    <AccordionDetails
-                                      sx={{
-                                        backgroundColor: 'white',
-                                        pt: 0,
-                                        pb: 2,
-                                        px: 3,
-                                        borderLeft: `4px solid ${section.color}`,
-                                        borderTop: `1px solid #e0e0e0`,
-                                      }}
-                                    >
-                                      <Box
-                                        sx={{
-                                          textAlign: 'left',
-                                          width: '100%',
-                                          '& p': {
-                                            margin: '8px 0',
-                                            fontFamily: 'Nunito, sans-serif',
-                                            lineHeight: 1.6,
-                                            color: '#333',
-                                            fontSize: '14px',
-                                            textAlign: 'left',
-                                          },
-                                          '& ul, & ol': {
-                                            margin: '8px 0',
-                                            paddingLeft: 24,
-                                            marginLeft: 0,
-                                            textAlign: 'left',
-                                            fontFamily: 'Nunito, sans-serif',
-                                            listStylePosition: 'outside',
-                                            direction: 'ltr',
-                                          },
-                                          '& li': {
-                                            marginBottom: 4,
-                                            lineHeight: 1.5,
-                                            color: '#555',
-                                            fontSize: '14px',
-                                            textAlign: 'left',
-                                            listStylePosition: 'outside',
-                                            direction: 'ltr',
-                                            paddingLeft: 0,
-                                            marginLeft: 0,
-                                          },
-                                          '& h1, & h2, & h3, & h4, & h5, & h6':
-                                            {
-                                              color: section.color,
-                                              marginTop: 12,
-                                              marginBottom: 8,
-                                              fontFamily: 'Rubik, sans-serif',
-                                              fontWeight: 'bold',
-                                              fontSize: '16px',
+                                            minWidth: 'auto',
+                                            px: { xs: 1, sm: 2 },
+                                            py: { xs: 0.5, sm: 1 },
+                                            fontSize: {
+                                              xs: '0.6rem',
+                                              sm: '0.7rem',
                                             },
-                                          '& strong': {
-                                            color: section.color,
                                             fontWeight: 'bold',
-                                          },
-                                          '& em': {
-                                            color: '#666',
-                                            fontStyle: 'italic',
-                                          },
-                                        }}
-                                      >
-                                        <ReactMarkdown
-                                          components={{
-                                            ul: ({ children }) => (
-                                              <ul
-                                                style={{
-                                                  textAlign: 'left',
-                                                  paddingLeft: '24px',
-                                                  marginLeft: 0,
-                                                  listStylePosition: 'outside',
-                                                }}
-                                              >
-                                                {children}
-                                              </ul>
-                                            ),
-                                            ol: ({ children }) => (
-                                              <ol
-                                                style={{
-                                                  textAlign: 'left',
-                                                  paddingLeft: '24px',
-                                                  marginLeft: 0,
-                                                  listStylePosition: 'outside',
-                                                }}
-                                              >
-                                                {children}
-                                              </ol>
-                                            ),
-                                            li: ({ children }) => (
-                                              <li
-                                                style={{
-                                                  textAlign: 'left',
-                                                  listStylePosition: 'outside',
-                                                  marginLeft: 0,
-                                                  paddingLeft: 0,
-                                                }}
-                                              >
-                                                {children}
-                                              </li>
-                                            ),
+                                            backgroundColor:
+                                              selectedGuideSection ===
+                                              'Scientific Classification'
+                                                ? '#1976d2'
+                                                : 'transparent',
+                                            color:
+                                              selectedGuideSection ===
+                                              'Scientific Classification'
+                                                ? 'white'
+                                                : '#1976d2',
+                                            borderColor: '#1976d2',
+                                            borderRadius: 2,
+                                            whiteSpace: 'nowrap',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: { xs: 0.2, sm: 0.5 },
+                                            '&:hover': {
+                                              backgroundColor:
+                                                selectedGuideSection ===
+                                                'Scientific Classification'
+                                                  ? '#1976d2'
+                                                  : 'rgba(25, 118, 210, 0.04)',
+                                            },
                                           }}
                                         >
-                                          {section.content.trim() ||
-                                            'No specific information available for this section.'}
-                                        </ReactMarkdown>
+                                          <ScienceIcon
+                                            sx={{
+                                              fontSize: { xs: 14, sm: 16 },
+                                            }}
+                                          />
+                                          <Typography
+                                            sx={{
+                                              fontSize: {
+                                                xs: '0.5rem',
+                                                sm: '0.6rem',
+                                              },
+                                              fontWeight: 'bold',
+                                              lineHeight: 1,
+                                            }}
+                                          >
+                                            Scientific
+                                          </Typography>
+                                        </Button>
+
+                                        {/* Common Names Button */}
+                                        {plantResult.data.commonNames &&
+                                          plantResult.data.commonNames.length >
+                                            0 && (
+                                            <Button
+                                              onClick={() =>
+                                                setSelectedGuideSection(
+                                                  'Common Names',
+                                                )
+                                              }
+                                              variant={
+                                                selectedGuideSection ===
+                                                'Common Names'
+                                                  ? 'contained'
+                                                  : 'outlined'
+                                              }
+                                              size='small'
+                                              sx={{
+                                                minWidth: 'auto',
+                                                px: { xs: 1, sm: 2 },
+                                                py: { xs: 0.5, sm: 1 },
+                                                fontSize: {
+                                                  xs: '0.6rem',
+                                                  sm: '0.7rem',
+                                                },
+                                                fontWeight: 'bold',
+                                                backgroundColor:
+                                                  selectedGuideSection ===
+                                                  'Common Names'
+                                                    ? '#4caf50'
+                                                    : 'transparent',
+                                                color:
+                                                  selectedGuideSection ===
+                                                  'Common Names'
+                                                    ? 'white'
+                                                    : '#4caf50',
+                                                borderColor: '#4caf50',
+                                                borderRadius: 2,
+                                                whiteSpace: 'nowrap',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: { xs: 0.2, sm: 0.5 },
+                                                '&:hover': {
+                                                  backgroundColor:
+                                                    selectedGuideSection ===
+                                                    'Common Names'
+                                                      ? '#4caf50'
+                                                      : 'rgba(76, 175, 80, 0.04)',
+                                                },
+                                              }}
+                                            >
+                                              <InfoIcon
+                                                sx={{
+                                                  fontSize: { xs: 14, sm: 16 },
+                                                }}
+                                              />
+                                              <Typography
+                                                sx={{
+                                                  fontSize: {
+                                                    xs: '0.5rem',
+                                                    sm: '0.6rem',
+                                                  },
+                                                  fontWeight: 'bold',
+                                                  lineHeight: 1,
+                                                }}
+                                              >
+                                                Names
+                                              </Typography>
+                                            </Button>
+                                          )}
+
+                                        {/* Confidence Level Button */}
+                                        <Button
+                                          onClick={() =>
+                                            setSelectedGuideSection(
+                                              'Confidence Level',
+                                            )
+                                          }
+                                          variant={
+                                            selectedGuideSection ===
+                                            'Confidence Level'
+                                              ? 'contained'
+                                              : 'outlined'
+                                          }
+                                          size='small'
+                                          sx={{
+                                            minWidth: 'auto',
+                                            px: { xs: 1, sm: 2 },
+                                            py: { xs: 0.5, sm: 1 },
+                                            fontSize: {
+                                              xs: '0.6rem',
+                                              sm: '0.7rem',
+                                            },
+                                            fontWeight: 'bold',
+                                            backgroundColor:
+                                              selectedGuideSection ===
+                                              'Confidence Level'
+                                                ? '#ff9800'
+                                                : 'transparent',
+                                            color:
+                                              selectedGuideSection ===
+                                              'Confidence Level'
+                                                ? 'white'
+                                                : '#ff9800',
+                                            borderColor: '#ff9800',
+                                            borderRadius: 2,
+                                            whiteSpace: 'nowrap',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: { xs: 0.2, sm: 0.5 },
+                                            '&:hover': {
+                                              backgroundColor:
+                                                selectedGuideSection ===
+                                                'Confidence Level'
+                                                  ? '#ff9800'
+                                                  : 'rgba(255, 152, 0, 0.04)',
+                                            },
+                                          }}
+                                        >
+                                          <VerifiedIcon
+                                            sx={{
+                                              fontSize: { xs: 14, sm: 16 },
+                                            }}
+                                          />
+                                          <Typography
+                                            sx={{
+                                              fontSize: {
+                                                xs: '0.5rem',
+                                                sm: '0.6rem',
+                                              },
+                                              fontWeight: 'bold',
+                                              lineHeight: 1,
+                                            }}
+                                          >
+                                            Confidence
+                                          </Typography>
+                                        </Button>
+
+                                        {/* Agricultural Guide Sections */}
+                                        {sections.map((section, index) => {
+                                          const IconComponent = section.icon;
+                                          return (
+                                            <Button
+                                              key={index}
+                                              onClick={() =>
+                                                setSelectedGuideSection(
+                                                  section.title,
+                                                )
+                                              }
+                                              variant={
+                                                selectedGuideSection ===
+                                                section.title
+                                                  ? 'contained'
+                                                  : 'outlined'
+                                              }
+                                              size='small'
+                                              sx={{
+                                                minWidth: 'auto',
+                                                px: { xs: 1, sm: 2 },
+                                                py: { xs: 0.5, sm: 1 },
+                                                fontSize: {
+                                                  xs: '0.6rem',
+                                                  sm: '0.7rem',
+                                                },
+                                                fontWeight: 'bold',
+                                                backgroundColor:
+                                                  selectedGuideSection ===
+                                                  section.title
+                                                    ? section.color
+                                                    : 'transparent',
+                                                color:
+                                                  selectedGuideSection ===
+                                                  section.title
+                                                    ? 'white'
+                                                    : section.color,
+                                                borderColor: section.color,
+                                                borderRadius: 2,
+                                                whiteSpace: 'nowrap',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: { xs: 0.2, sm: 0.5 },
+                                                '&:hover': {
+                                                  backgroundColor:
+                                                    selectedGuideSection ===
+                                                    section.title
+                                                      ? section.color
+                                                      : 'rgba(0, 0, 0, 0.04)',
+                                                },
+                                              }}
+                                            >
+                                              <IconComponent
+                                                sx={{
+                                                  fontSize: { xs: 14, sm: 16 },
+                                                }}
+                                              />
+                                              <Typography
+                                                sx={{
+                                                  fontSize: {
+                                                    xs: '0.5rem',
+                                                    sm: '0.6rem',
+                                                  },
+                                                  fontWeight: 'bold',
+                                                  lineHeight: 1,
+                                                }}
+                                              >
+                                                {section.title}
+                                              </Typography>
+                                            </Button>
+                                          );
+                                        })}
                                       </Box>
-                                    </AccordionDetails>
-                                  </Accordion>
+                                    </Box>
+                                  </>
                                 );
-                              })}
+                              })()}
                             </Box>
                           </Paper>
                         )}
@@ -1712,7 +2073,7 @@ const UserPage: React.FC = () => {
             )}
           </Box>
         )}
-        {selectedNav === 'FAQ' && (
+        {selectedNav === t('user.faq') && (
           <Box
             sx={{
               width: 'auto',
@@ -1731,90 +2092,71 @@ const UserPage: React.FC = () => {
               variant='h4'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
             >
-              Frequently Asked Questions (FAQ)
+              {t('user.frequentlyAskedQuestions')}
             </Typography>
             <Typography
               variant='h6'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 1 }}
             >
-              1. What is AgroConnect Nepal?
+              1. {t('user.whatIsAgroConnect')}
             </Typography>
             <Typography
               sx={{ color: '#eee', fontFamily: 'Nunito, sans-serif', mb: 2 }}
             >
-              AgroConnect Nepal is a smart web/mobile platform empowering Nepali
-              farmers. We provide personalized agricultural support, relevant
-              information, and tools to help you improve practices, increase
-              yields, and navigate farming challenges.
+              {t('user.agroConnectDescription')}
             </Typography>
             <Typography
               variant='h6'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 1 }}
             >
-              2. How can AgroConnect Nepal help me?
+              2. {t('user.howCanHelp')}
             </Typography>
             <Typography
               sx={{ color: '#eee', fontFamily: 'Nunito, sans-serif', mb: 2 }}
             >
-              We offer tailored information and tools:
+              {t('user.helpDescription')}
               <ul style={{ margin: 0, paddingLeft: 20 }}>
-                <li>
-                  Personalized Updates: After providing your farm details,
-                  receive weekly, personalized tips based on your farm type,
-                  location, and crops. This includes crop-specific advice,
-                  pest/disease alerts, weather forecasts, and government
-                  resource availability, all in Nepali.
-                </li>
-                <li>
-                  Future AI Integration: Our roadmap includes an AI Assistant
-                  (voice-based Nepali chatbot), an Image Recognition Tool for
-                  crop disease identification, and Yield Prediction & Smart
-                  Planning using your farm data.
-                </li>
+                <li>{t('user.personalizedUpdates')}</li>
+                <li>{t('user.futureAI')}</li>
               </ul>
             </Typography>
             <Typography
               variant='h6'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 1 }}
             >
-              3. How do I get started and use the platform effectively?
+              3. {t('user.howToStart')}
             </Typography>
             <Typography
               sx={{ color: '#eee', fontFamily: 'Nunito, sans-serif', mb: 2 }}
             >
-              <b>Explore & Engage:</b>
+              <b>{t('user.exploreEngage')}</b>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 <li>
-                  <b>Message Tab:</b> Check the "Messages" tab for your weekly
-                  personalized agricultural tips and updates.
+                  <b>{t('user.messageTab')}</b>
                 </li>
                 <li>
-                  <b>Ask Questions:</b> Use the question feature to ask specific
-                  queries; our AI/ML will provide personalized answers.
+                  <b>{t('user.askQuestions')}</b>
                 </li>
                 <li>
-                  <b>Image Query (Future):</b> Soon, you'll be able to upload
-                  images of diseased crops for AI-powered identification and
-                  remedies.
+                  <b>{t('user.imageQueryFuture')}</b>
                 </li>
-                <li>Utilize new features as they become available.</li>
+                <li>{t('user.utilizeFeatures')}</li>
                 <li>
-                  <b>Provide Feedback:</b> Your input helps us improve and grow!
+                  <b>{t('user.provideFeedback')}</b>
                 </li>
               </ul>
-              By engaging, you maximize the benefits of AgroConnect Nepal's
-              personalized support.
+              {t('user.engageDescription')}
             </Typography>
             <Typography
               variant='h6'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 1 }}
             >
-              4. How can I give feedback?
+              4. {t('user.howToFeedback')}
             </Typography>
             <Typography
               sx={{ color: '#eee', fontFamily: 'Nunito, sans-serif', mb: 2 }}
             >
-              We value your input! Please feel free to give feedback to us at{' '}
+              {t('user.feedbackDescription')}{' '}
               <a
                 href='mailto:agroconnect.nepal.feedback@gmail.com'
                 style={{ color: '#b2ff59' }}
@@ -1971,19 +2313,90 @@ const UserPage: React.FC = () => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
+            {/* Language Switcher */}
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  color: '#4A7C1B',
+                  fontFamily: 'Nunito, sans-serif',
+                  mb: 1,
+                }}
+              >
+                {t('user.language')}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant={i18n.language === 'en' ? 'contained' : 'outlined'}
+                  size='small'
+                  onClick={() => {
+                    i18n.changeLanguage('en');
+                    handleMoreMenuClose();
+                  }}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 1.5,
+                    py: 0.3,
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    backgroundColor:
+                      i18n.language === 'en' ? '#4A7C1B' : 'transparent',
+                    color: i18n.language === 'en' ? 'white' : '#4A7C1B',
+                    borderColor: '#4A7C1B',
+                    '&:hover': {
+                      backgroundColor:
+                        i18n.language === 'en'
+                          ? '#29510A'
+                          : 'rgba(74, 124, 27, 0.1)',
+                    },
+                  }}
+                >
+                  EN
+                </Button>
+                <Button
+                  variant={i18n.language === 'ne' ? 'contained' : 'outlined'}
+                  size='small'
+                  onClick={() => {
+                    i18n.changeLanguage('ne');
+                    handleMoreMenuClose();
+                  }}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 1.5,
+                    py: 0.3,
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    backgroundColor:
+                      i18n.language === 'ne' ? '#4A7C1B' : 'transparent',
+                    color: i18n.language === 'ne' ? 'white' : '#4A7C1B',
+                    borderColor: '#4A7C1B',
+                    '&:hover': {
+                      backgroundColor:
+                        i18n.language === 'ne'
+                          ? '#29510A'
+                          : 'rgba(74, 124, 27, 0.1)',
+                    },
+                  }}
+                >
+                  ने
+                </Button>
+              </Box>
+            </Box>
+            <Divider />
             <MenuItem
               onClick={() => {
-                setSelectedNav('FAQ');
+                setSelectedNav(t('user.faq'));
                 handleMoreMenuClose();
               }}
             >
-              FAQ
+              {t('user.faq')}
             </MenuItem>
             <Divider />
             {userProfile && (
               <MenuItem
                 onClick={() => {
-                  setSelectedNav('UserInfo');
+                  setSelectedNav(t('user.userInfo'));
                   handleMoreMenuClose();
                 }}
                 sx={{ display: 'flex', alignItems: 'center', minWidth: 180 }}
@@ -2025,7 +2438,7 @@ const UserPage: React.FC = () => {
               sx={{ color: '#29510A' }}
             >
               <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
-              Logout
+              {t('user.logout')}
             </MenuItem>
           </Menu>
         </Box>
@@ -2041,6 +2454,7 @@ const UserPage: React.FC = () => {
             overflow: 'hidden',
             minHeight: 'calc(100vh - 64px)', // leave space for navbar
             pt: 2,
+            width: '100%',
           }}
         >
           <Box
@@ -2048,11 +2462,12 @@ const UserPage: React.FC = () => {
               width: '100%',
               height: '100%',
               overflowY: 'auto',
+              overflowX: 'hidden',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               py: { xs: 1, sm: 4 },
-              px: { xs: 1, sm: 2 },
+              px: { xs: 0.5, sm: 2 },
             }}
           >
             {renderMainContent()}
