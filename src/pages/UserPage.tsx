@@ -46,7 +46,6 @@ import plantService, {
 } from '../services/plantService';
 import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import VoiceInput from '../components/VoiceInput';
 
 // Helper function to parse agricultural guide content into sections
 const parseAgriculturalGuide = (content: string) => {

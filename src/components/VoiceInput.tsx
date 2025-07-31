@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Box, IconButton, Typography, Chip, Alert } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import MicIcon from '@mui/icons-material/Mic';
-import MicOffIcon from '@mui/icons-material/MicOff';
 import StopIcon from '@mui/icons-material/Stop';
 import SendIcon from '@mui/icons-material/Send';
 
@@ -176,7 +175,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [language, t, transcript, onTranscript, onSend, autoSend]);
+  }, [language, t]); // Removed problematic dependencies
 
   // Update language when i18n language changes
   useEffect(() => {
