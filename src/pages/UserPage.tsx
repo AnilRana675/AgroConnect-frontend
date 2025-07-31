@@ -1227,31 +1227,122 @@ const UserPage: React.FC = () => {
                         gap: 1,
                       }}
                     >
-                      <Box
-                        sx={{
-                          color: msg.from === 'user' ? 'white' : '#b2ff59',
-                          fontFamily: 'Nunito, sans-serif',
-                          fontSize: 14,
-                          lineHeight: 1.4,
-                          whiteSpace: 'pre-line',
-                          wordBreak: 'break-word',
-                          textAlign: msg.from === 'user' ? 'right' : 'left',
-                          '& p': { margin: 0 },
-                          '& ul, & ol': {
-                            paddingLeft: '20px',
-                            margin: '8px 0',
-                          },
-                          '& li': { margin: '4px 0' },
-                        }}
-                      >
-                        {msg.from === 'bot' && <b>AgroBOT: </b>}
-                        {msg.from === 'user' && (
-                          <b>
-                            {userProfile?.personalInfo?.firstName || 'You'}
-                            :{' '}
-                          </b>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        {/* Bot message: left-aligned, full width, speaker button bottom right */}
+                        {msg.from === 'bot' ? (
+                          <Box sx={{ width: '100%' }}>
+                            <Typography
+                              sx={{
+                                color: '#b2ff59',
+                                fontFamily: 'Nunito, sans-serif',
+                                fontSize: 14,
+                                lineHeight: 1.4,
+                                whiteSpace: 'pre-line',
+                                wordBreak: 'break-word',
+                                textAlign: 'left',
+                                width: '100%',
+                                display: 'block',
+                              }}
+                            >
+                              <b>AgroBOT: </b>
+                              <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            </Typography>
+                            <Box
+                              sx={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                mt: 0.5,
+                                gap: 1,
+                              }}
+                            >
+                              {isTTSProcessing && !isAudioPlaying && (
+                                <Typography
+                                  sx={{
+                                    color: '#ff9800',
+                                    fontFamily: 'Nunito, sans-serif',
+                                    fontSize: 12,
+                                    fontWeight: 'bold',
+                                    animation: 'pulse 1.5s infinite',
+                                    '@keyframes pulse': {
+                                      '0%': { opacity: 1 },
+                                      '50%': { opacity: 0.5 },
+                                      '100%': { opacity: 1 },
+                                    },
+                                  }}
+                                >
+                                  PLEASE WAIT...
+                                </Typography>
+                              )}
+                              <IconButton
+                                size='medium'
+                                disabled={isTTSProcessing || isAudioPlaying}
+                                sx={{
+                                  background:
+                                    isTTSProcessing || isAudioPlaying
+                                      ? '#ccc'
+                                      : '#fff',
+                                  color:
+                                    isTTSProcessing || isAudioPlaying
+                                      ? '#666'
+                                      : '#1976d2',
+                                  border: '2px solid #1976d2',
+                                  borderRadius: 2,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                                  padding: '4px',
+                                  margin: '2px',
+                                  transition: 'background 0.2s, color 0.2s',
+                                  '&:hover': {
+                                    background:
+                                      isTTSProcessing || isAudioPlaying
+                                        ? '#ccc'
+                                        : '#b2ff59',
+                                    color:
+                                      isTTSProcessing || isAudioPlaying
+                                        ? '#666'
+                                        : '#222',
+                                    borderColor: '#388e3c',
+                                  },
+                                }}
+                                aria-label='Listen to response'
+                                onClick={() => handleSpeak(msg.text)}
+                              >
+                                <span
+                                  role='img'
+                                  aria-label='speaker'
+                                  style={{
+                                    fontSize: 28,
+                                    filter: 'drop-shadow(0 1px 2px #fff)',
+                                  }}
+                                >
+                                  🔊
+                                </span>
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        ) : (
+                          // User message: right-aligned as before
+                          <Typography
+                            sx={{
+                              color: 'white',
+                              fontFamily: 'Nunito, sans-serif',
+                              fontSize: 14,
+                              lineHeight: 1.4,
+                              whiteSpace: 'pre-line',
+                              wordBreak: 'break-word',
+                              textAlign: 'right',
+                              width: '100%',
+                              display: 'block',
+                            }}
+                          >
+                            <b>
+                              {userProfile?.personalInfo?.firstName || 'You'}
+                              :{' '}
+                            </b>
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                          </Typography>
                         )}
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
                       </Box>
                     </Box>
                   </Box>
