@@ -1,5 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import './i18n'; // Initialize i18n
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -16,6 +21,8 @@ function App() {
         <Route path='/signup' element={<SignUpPage />} />
         <Route path='/forgot-password' element={<ForgotPasswordPage />} />
         <Route path='/user' element={<UserPage />} />
+        {/* Catch all route - redirect unknown paths to landing page */}
+        <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
     </Router>
   );

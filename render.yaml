@@ -17,7 +17,14 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    # Handle SPA routing - all routes should serve index.html
     routes:
+      - type: rewrite
+        source: /static/*
+        destination: /static/:splat
       - type: rewrite
         source: /*
         destination: /index.html
