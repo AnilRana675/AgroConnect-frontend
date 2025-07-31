@@ -482,40 +482,63 @@ const UserPage: React.FC = () => {
         const recognitionInstance = new SpeechRecognition();
         recognitionInstance.continuous = false;
         recognitionInstance.interimResults = true;
-        recognitionInstance.lang = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
+        recognitionInstance.maxAlternatives = 1;
+
+        const language = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
+        recognitionInstance.lang = language;
+
+        console.log('Speech recognition initialized with language:', language);
 
         recognitionInstance.onstart = () => {
+          console.log('Speech recognition started');
           setIsListening(true);
           setVoiceError(null);
         };
 
         recognitionInstance.onresult = (event: any) => {
           let transcript = '';
+          let interimTranscript = '';
+
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-              transcript += event.results[i][0].transcript;
+            const result = event.results[i];
+            if (result.isFinal) {
+              transcript += result[0].transcript;
+            } else {
+              interimTranscript += result[0].transcript;
             }
           }
+
           if (transcript) {
+            console.log('Final transcript:', transcript);
             setInput(prev => prev + transcript);
+          }
+
+          // Optional: Handle interim results for real-time display
+          if (interimTranscript) {
+            console.log('Interim transcript:', interimTranscript);
           }
         };
 
         recognitionInstance.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
+          console.error('Speech recognition error:', event.error, event);
           setVoiceError(
             event.error === 'no-speech'
               ? i18n.language === 'ne'
                 ? 'कुनै आवाज सुनिएन। फेरि प्रयास गर्नुहोस्।'
                 : 'No speech detected. Please try again.'
-              : i18n.language === 'ne'
-                ? 'आवाज इनपुट त्रुटि।'
-                : 'Voice input error.',
+              : event.error === 'not-allowed'
+                ? i18n.language === 'ne'
+                  ? 'माइक्रोफोन पहुँच अनुमति चाहिन्छ।'
+                  : 'Microphone access is required.'
+                : i18n.language === 'ne'
+                  ? 'आवाज इनपुट त्रुटि।'
+                  : 'Voice input error.',
           );
           setIsListening(false);
         };
 
         recognitionInstance.onend = () => {
+          console.log('Speech recognition ended');
           setIsListening(false);
         };
 
@@ -529,6 +552,15 @@ const UserPage: React.FC = () => {
       }
     };
   }, [i18n.language]);
+
+  // Update recognition language when i18n language changes
+  React.useEffect(() => {
+    if (recognition) {
+      const language = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
+      recognition.lang = language;
+      console.log('Updated speech recognition language to:', language);
+    }
+  }, [i18n.language, recognition]);
 
   // Handle onboarding option select
   const handleOnboardingSelect = async (option: string) => {
@@ -570,13 +602,32 @@ const UserPage: React.FC = () => {
 
   // Voice control functions
   const toggleVoiceInput = () => {
-    if (!recognition) return;
+    if (!recognition) {
+      console.error('Speech recognition not initialized');
+      setVoiceError(
+        i18n.language === 'ne'
+          ? 'आवाज पहिचान समर्थित छैन।'
+          : 'Speech recognition not supported.',
+      );
+      return;
+    }
 
     if (isListening) {
+      console.log('Stopping speech recognition');
       recognition.stop();
     } else {
+      console.log('Starting speech recognition');
       setVoiceError(null);
-      recognition.start();
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setVoiceError(
+          i18n.language === 'ne'
+            ? 'आवाज इनपुट सुरु गर्न सकिएन।'
+            : 'Could not start voice input.',
+        );
+      }
     }
   };
 
