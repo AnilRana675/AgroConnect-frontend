@@ -40,15 +40,36 @@ class AuthService {
   // Login user
   async login(credentials: LoginData): Promise<AuthResponse> {
     try {
+      console.log('🔐 AuthService: Making login request to /auth/login');
       const response = await api.post('/auth/login', credentials);
+      console.log('🔐 AuthService: Login API response:', response.data);
 
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // The backend wraps the response in a data object
+      const loginData = response.data.data;
+      console.log('🔐 AuthService: Extracted login data:', loginData);
+
+      if (loginData?.token) {
+        console.log('🔐 AuthService: Storing token and user in localStorage');
+        localStorage.setItem('token', loginData.token);
+        localStorage.setItem('user', JSON.stringify(loginData.user));
+        console.log(
+          '🔐 AuthService: Token stored:',
+          loginData.token.substring(0, 20) + '...',
+        );
+
+        // Return the expected format for the frontend
+        return {
+          message: response.data.message,
+          user: loginData.user,
+          token: loginData.token,
+          expiresIn: loginData.expiresIn || '7d',
+        };
+      } else {
+        console.error('🔐 AuthService: No token in response data:', loginData);
+        throw new Error('Login failed: No token received');
       }
-
-      return response.data;
     } catch (error: any) {
+      console.error('🔐 AuthService: Login error:', error);
       throw new Error(error.response?.data?.message || 'Login failed');
     }
   }
@@ -68,9 +89,28 @@ class AuthService {
   // Get current user profile
   async getCurrentUser(): Promise<User> {
     try {
+      console.log(
+        '👤 AuthService: Fetching current user profile from /auth/me',
+      );
       const response = await api.get('/auth/me');
-      return response.data.user;
+      console.log('👤 AuthService: Profile API response:', response.data);
+
+      // The backend wraps the response in a data object
+      const profileData = response.data.data;
+      console.log('👤 AuthService: Extracted profile data:', profileData);
+
+      if (profileData?.user) {
+        console.log(
+          '👤 AuthService: User profile retrieved successfully:',
+          profileData.user.personalInfo?.firstName,
+        );
+        return profileData.user;
+      } else {
+        console.error('👤 AuthService: No user in response data:', profileData);
+        throw new Error('Failed to get user profile: No user data received');
+      }
     } catch (error: any) {
+      console.error('👤 AuthService: Profile fetch error:', error);
       throw new Error(
         error.response?.data?.message || 'Failed to get user profile',
       );
@@ -121,6 +161,49 @@ class AuthService {
   // Get stored token
   getStoredToken(): string | null {
     return localStorage.getItem('token');
+  }
+
+  // Request password reset
+  async requestPasswordReset(email: string): Promise<void> {
+    try {
+      await api.post('/auth/forgot-password', { email });
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 'Failed to request password reset',
+      );
+    }
+  }
+
+  // Reset password with token
+  async resetPassword(
+    email: string,
+    token: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      await api.post('/auth/reset-password', {
+        email,
+        token,
+        newPassword,
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Password reset failed');
+    }
+  }
+
+  // Validate reset token
+  async validateResetToken(email: string, token: string): Promise<any> {
+    try {
+      const response = await api.post('/auth/validate-reset-token', {
+        email,
+        token,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 'Token validation failed',
+      );
+    }
   }
 }
 

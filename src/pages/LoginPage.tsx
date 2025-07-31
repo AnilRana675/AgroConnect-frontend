@@ -44,13 +44,22 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
+      console.log('🔐 Attempting login with:', formData.email);
       const response = await authService.login(formData);
+      console.log('🔐 Login response:', response);
 
       if (response.token) {
+        console.log(
+          '🔐 Login successful, token received. Navigating to /user...',
+        );
         // Navigate to user page
         navigate('/user');
+      } else {
+        console.error('🔐 Login response missing token:', response);
+        setError('Login failed: No token received');
       }
     } catch (err: any) {
+      console.error('🔐 Login error:', err);
       setError(err.message || t('login.loginFailed'));
     } finally {
       setLoading(false);
