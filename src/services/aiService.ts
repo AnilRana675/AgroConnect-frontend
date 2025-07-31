@@ -3,6 +3,7 @@ import api from './api';
 export interface AIAdviceRequest {
   question: string;
   userId?: string;
+  userLanguage?: 'en' | 'ne';
 }
 
 export interface AIAdviceResponse {

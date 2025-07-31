@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import MicIcon from '@mui/icons-material/Mic';
+import SendIcon from '@mui/icons-material/Send';
+import StopIcon from '@mui/icons-material/Stop';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
@@ -38,6 +40,7 @@ import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import api from '../services/api';
 import aiService from '../services/aiService';
 import authService from '../services/authService';
+// import translationService from '../services/translationService';
 import plantService, {
   PlantIdentificationResult,
 } from '../services/plantService';
@@ -362,6 +365,13 @@ const UserPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
 
+  // Voice recognition state
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(
+    null,
+  );
+
   // Personalized messages state with caching
   const [personalizedTips, setPersonalizedTips] = useState<string | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
@@ -462,6 +472,64 @@ const UserPage: React.FC = () => {
     loadCachedTips();
   }, []);
 
+  // Initialize speech recognition
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        const recognitionInstance = new SpeechRecognition();
+        recognitionInstance.continuous = false;
+        recognitionInstance.interimResults = true;
+        recognitionInstance.lang = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
+
+        recognitionInstance.onstart = () => {
+          setIsListening(true);
+          setVoiceError(null);
+        };
+
+        recognitionInstance.onresult = (event: any) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              transcript += event.results[i][0].transcript;
+            }
+          }
+          if (transcript) {
+            setInput(prev => prev + transcript);
+          }
+        };
+
+        recognitionInstance.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setVoiceError(
+            event.error === 'no-speech'
+              ? i18n.language === 'ne'
+                ? 'कुनै आवाज सुनिएन। फेरि प्रयास गर्नुहोस्।'
+                : 'No speech detected. Please try again.'
+              : i18n.language === 'ne'
+                ? 'आवाज इनपुट त्रुटि।'
+                : 'Voice input error.',
+          );
+          setIsListening(false);
+        };
+
+        recognitionInstance.onend = () => {
+          setIsListening(false);
+        };
+
+        setRecognition(recognitionInstance);
+      }
+    }
+
+    return () => {
+      if (recognition) {
+        recognition.stop();
+      }
+    };
+  }, [i18n.language]);
+
   // Handle onboarding option select
   const handleOnboardingSelect = async (option: string) => {
     try {
@@ -500,10 +568,33 @@ const UserPage: React.FC = () => {
     }
   };
 
-  // Handle sending a chat message
-  const handleSend = async () => {
+  // Voice control functions
+  const toggleVoiceInput = () => {
+    if (!recognition) return;
+
+    if (isListening) {
+      recognition.stop();
+    } else {
+      setVoiceError(null);
+      recognition.start();
+    }
+  };
+
+  const handleMicClick = () => {
     if (input.trim()) {
-      const userMessage = { from: 'user' as const, text: input };
+      // If there's text, send it
+      handleSend();
+    } else {
+      // If no text, toggle voice input
+      toggleVoiceInput();
+    }
+  };
+
+  // Handle sending a chat message
+  const handleSend = async (messageText?: string) => {
+    const textToSend = messageText || input;
+    if (textToSend.trim()) {
+      const userMessage = { from: 'user' as const, text: textToSend };
       setMessages(prev => [...prev, userMessage]);
       setInput('');
       const user = authService.getStoredUser();
@@ -521,8 +612,9 @@ const UserPage: React.FC = () => {
       ]);
       try {
         const response = await aiService.getAdvice({
-          question: input,
+          question: textToSend,
           userId: user._id,
+          userLanguage: i18n.language as 'en' | 'ne',
         });
         // Remove loading message and add AI response
         setMessages(prev => [
@@ -996,10 +1088,55 @@ const UserPage: React.FC = () => {
                   color: '#29510A',
                 }}
               />
-              <IconButton onClick={handleSend}>
-                <MicIcon sx={{ color: '#29510A', fontSize: 28 }} />
+              <IconButton
+                onClick={handleMicClick}
+                sx={{
+                  color: isListening ? '#f44336' : '#29510A',
+                  opacity: 1,
+                  transition: 'all 0.2s',
+                  animation: isListening ? 'pulse 1s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                    '100%': { opacity: 1 },
+                  },
+                }}
+              >
+                {isListening ? (
+                  <StopIcon sx={{ color: '#f44336', fontSize: 28 }} />
+                ) : input.trim() ? (
+                  <SendIcon sx={{ color: '#29510A', fontSize: 28 }} />
+                ) : (
+                  <MicIcon sx={{ color: '#29510A', fontSize: 28 }} />
+                )}
               </IconButton>
             </Box>
+
+            {/* Voice Error Display */}
+            {voiceError && (
+              <Box sx={{ width: { xs: '90%', sm: 400 }, maxWidth: 500, mt: 1 }}>
+                <Alert
+                  severity='warning'
+                  onClose={() => setVoiceError(null)}
+                  sx={{ fontSize: 14 }}
+                >
+                  {voiceError}
+                </Alert>
+              </Box>
+            )}
+
+            {/* Voice Status */}
+            {isListening && !voiceError && (
+              <Box sx={{ width: { xs: '90%', sm: 400 }, maxWidth: 500, mt: 1 }}>
+                <Alert severity='info' sx={{ py: 0.5 }}>
+                  <Typography variant='body2'>
+                    {i18n.language === 'ne'
+                      ? '🎤 सुन्दै... स्पष्ट बोल्नुहोस्।'
+                      : '🎤 Listening... Speak clearly.'}
+                  </Typography>
+                </Alert>
+              </Box>
+            )}
           </>
         )}
         {selectedNav === t('user.message') && (

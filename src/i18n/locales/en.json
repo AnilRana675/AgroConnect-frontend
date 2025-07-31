@@ -136,6 +136,32 @@
     "userNotFound": "User not found. Please log in again.",
     "language": "Language"
   },
+  "voice": {
+    "notSupported": "Voice input not supported in this browser",
+    "clickToStart": "Click to start voice input",
+    "stopListening": "Click to stop listening",
+    "listening": "Listening... Speak now",
+    "recording": "Recording",
+    "processing": "Processing your voice...",
+    "error": "Voice input error",
+    "recognized": "Voice recognized",
+    "speaking": "You said",
+    "tryAgain": "Try speaking again",
+    "orType": "or type your message",
+    "enableMic": "Please enable microphone access",
+    "micBlocked": "Microphone access blocked",
+    "clear": "Clear",
+    "noSpeech": "No speech detected. Please try again.",
+    "audioCapture": "Microphone access denied or unavailable",
+    "notAllowed": "Please allow microphone access to use voice input",
+    "networkError": "Network error during voice recognition"
+  },
+  "chat": {
+    "placeholder": "Ask me anything about farming...",
+    "send": "Send",
+    "thinking": "AgroBOT is thinking...",
+    "error": "Sorry, I couldn't process your request."
+  },
   "farmer": "Farmer",
   "logo": "Logo",
   "farmerIllustration": "Farmer"
