@@ -375,6 +375,8 @@ const UserPage: React.FC = () => {
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(
     null,
   );
+  const [interimTranscript, setInterimTranscript] = useState(''); // For displaying interim results
+  const [speechSupported, setSpeechSupported] = useState<boolean | null>(null); // null = checking, true/false = result
 
   // Personalized messages state with caching
   const [personalizedTips, setPersonalizedTips] = useState<string | null>(null);
@@ -425,10 +427,40 @@ const UserPage: React.FC = () => {
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
+        console.log('Fetching user profile...');
+
+        // Check if token exists first
+        const token = localStorage.getItem('token');
+        console.log('Token exists:', !!token);
+        console.log(
+          'Token value:',
+          token ? `${token.substring(0, 20)}...` : 'null',
+        );
+
+        if (!token) {
+          console.log('No token found, redirecting to login');
+          window.location.href = '/login';
+          return;
+        }
+
         const user = await authService.getCurrentUser();
+        console.log('User profile fetched successfully:', user);
         setUserProfile(user);
       } catch (err: any) {
-        // ignore error
+        console.error('Failed to fetch user profile:', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
+
+        // If it's a 401, redirect to login
+        if (err.response?.status === 401) {
+          console.log('Unauthorized - redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       }
     };
     fetchProfile();
@@ -483,7 +515,11 @@ const UserPage: React.FC = () => {
         window.SpeechRecognition || window.webkitSpeechRecognition;
 
       if (SpeechRecognition) {
+        setSpeechSupported(true);
+
         const recognitionInstance = new SpeechRecognition();
+
+        // Configuration
         recognitionInstance.continuous = false;
         recognitionInstance.interimResults = true;
         recognitionInstance.maxAlternatives = 1;
@@ -491,63 +527,124 @@ const UserPage: React.FC = () => {
         const language = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
         recognitionInstance.lang = language;
 
-        console.log('Speech recognition initialized with language:', language);
+        console.log(
+          '🎤 Speech recognition initialized with language:',
+          language,
+        );
 
+        // Event handlers
         recognitionInstance.onstart = () => {
-          console.log('Speech recognition started');
+          console.log('🎤 Speech recognition started');
           setIsListening(true);
           setVoiceError(null);
+          setInterimTranscript('');
         };
 
         recognitionInstance.onresult = (event: any) => {
-          let transcript = '';
-          let interimTranscript = '';
+          console.log('🎤 Speech recognition result event:', event);
 
+          let finalTranscript = '';
+          let interim = '';
+
+          // Process all results
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
+            const transcript = result[0].transcript;
+
+            console.log(
+              `🎤 Result ${i}: "${transcript}" (final: ${result.isFinal}, confidence: ${result[0].confidence})`,
+            );
+
             if (result.isFinal) {
-              transcript += result[0].transcript;
+              finalTranscript += transcript;
             } else {
-              interimTranscript += result[0].transcript;
+              interim += transcript;
             }
           }
 
-          if (transcript) {
-            console.log('Final transcript:', transcript);
-            setInput(prev => prev + transcript);
-          }
+          // Update interim results for visual feedback
+          setInterimTranscript(interim);
 
-          // Optional: Handle interim results for real-time display
-          if (interimTranscript) {
-            console.log('Interim transcript:', interimTranscript);
+          // Handle final results
+          if (finalTranscript) {
+            console.log('🎤 Final transcript received:', finalTranscript);
+
+            // Replace the entire input with the final transcript (don't append)
+            setInput(finalTranscript.trim());
+            setInterimTranscript('');
+
+            // Stop recognition after getting final result
+            recognitionInstance.stop();
           }
         };
 
         recognitionInstance.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error, event);
-          setVoiceError(
-            event.error === 'no-speech'
-              ? i18n.language === 'ne'
-                ? 'कुनै आवाज सुनिएन। फेरि प्रयास गर्नुहोस्।'
-                : 'No speech detected. Please try again.'
-              : event.error === 'not-allowed'
-                ? i18n.language === 'ne'
+          console.error('🎤 Speech recognition error:', event.error, event);
+
+          let errorMessage = '';
+          switch (event.error) {
+            case 'no-speech':
+              errorMessage =
+                i18n.language === 'ne'
+                  ? 'कुनै आवाज सुनिएन। फेरि प्रयास गर्नुहोस्।'
+                  : 'No speech detected. Please try again.';
+              break;
+            case 'not-allowed':
+            case 'service-not-allowed':
+              errorMessage =
+                i18n.language === 'ne'
                   ? 'माइक्रोफोन पहुँच अनुमति चाहिन्छ।'
-                  : 'Microphone access is required.'
-                : i18n.language === 'ne'
+                  : 'Microphone access is required.';
+              break;
+            case 'network':
+              errorMessage =
+                i18n.language === 'ne'
+                  ? 'नेटवर्क त्रुटि। इन्टरनेट जडान जाँच गर्नुहोस्।'
+                  : 'Network error. Please check your internet connection.';
+              break;
+            case 'aborted':
+              errorMessage =
+                i18n.language === 'ne'
+                  ? 'आवाज पहिचान रद्द भयो।'
+                  : 'Speech recognition was aborted.';
+              break;
+            case 'audio-capture':
+              errorMessage =
+                i18n.language === 'ne'
+                  ? 'माइक्रोफोन काम गरिरहेको छैन।'
+                  : 'Microphone is not working.';
+              break;
+            default:
+              errorMessage =
+                i18n.language === 'ne'
                   ? 'आवाज इनपुट त्रुटि।'
-                  : 'Voice input error.',
-          );
+                  : 'Voice input error.';
+          }
+
+          setVoiceError(errorMessage);
           setIsListening(false);
+          setInterimTranscript('');
         };
 
         recognitionInstance.onend = () => {
-          console.log('Speech recognition ended');
+          console.log('🎤 Speech recognition ended');
           setIsListening(false);
+          setInterimTranscript('');
         };
 
         setRecognition(recognitionInstance);
+        console.log('🎤 Speech recognition setup complete');
+      } else {
+        setSpeechSupported(false);
+        console.warn('🎤 Speech recognition not supported in this browser');
+        setVoiceError(
+          i18n.language === 'ne'
+            ? 'यो ब्राउजरमा आवाज पहिचान समर्थित छैन। कृपया Chrome, Edge, वा Safari प्रयोग गर्नुहोस्।'
+            : 'Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.',
+        );
       }
+    } else {
+      setSpeechSupported(false);
     }
 
     return () => {
@@ -555,16 +652,34 @@ const UserPage: React.FC = () => {
         recognition.stop();
       }
     };
-  }, [i18n.language, recognition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Update recognition language when i18n language changes
   React.useEffect(() => {
     if (recognition) {
       const language = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
       recognition.lang = language;
-      console.log('Updated speech recognition language to:', language);
+      console.log('🎤 Updated speech recognition language to:', language);
+
+      // If currently listening, restart with new language
+      if (isListening) {
+        console.log('🎤 Restarting recognition with new language');
+        recognition.stop();
+        setTimeout(() => {
+          if (!isListening) {
+            // Only restart if not already restarted
+            try {
+              recognition.start();
+            } catch (error) {
+              console.error('🎤 Error restarting recognition:', error);
+            }
+          }
+        }, 100);
+      }
     }
-  }, [i18n.language, recognition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language, recognition]); // Remove isListening from dependencies to avoid loops
 
   // Handle onboarding option select
   const handleOnboardingSelect = async (option: string) => {
@@ -607,7 +722,7 @@ const UserPage: React.FC = () => {
   // Voice control functions
   const toggleVoiceInput = () => {
     if (!recognition) {
-      console.error('Speech recognition not initialized');
+      console.error('🎤 Speech recognition not initialized');
       setVoiceError(
         i18n.language === 'ne'
           ? 'आवाज पहिचान समर्थित छैन।'
@@ -617,20 +732,35 @@ const UserPage: React.FC = () => {
     }
 
     if (isListening) {
-      console.log('Stopping speech recognition');
+      console.log('🎤 Stopping speech recognition');
       recognition.stop();
+      setIsListening(false);
+      setInterimTranscript('');
     } else {
-      console.log('Starting speech recognition');
+      console.log('🎤 Starting speech recognition');
       setVoiceError(null);
+      setInterimTranscript('');
+
+      // Clear any existing input to avoid confusion
+      if (!input.trim()) {
+        setInput('');
+      }
+
       try {
+        // Ensure recognition is properly configured before starting
+        const language = i18n.language === 'ne' ? 'ne-NP' : 'en-US';
+        recognition.lang = language;
+
         recognition.start();
+        console.log('🎤 Speech recognition start requested');
       } catch (error) {
-        console.error('Error starting speech recognition:', error);
+        console.error('🎤 Error starting speech recognition:', error);
         setVoiceError(
           i18n.language === 'ne'
             ? 'आवाज इनपुट सुरु गर्न सकिएन।'
             : 'Could not start voice input.',
         );
+        setIsListening(false);
       }
     }
   };
@@ -1097,122 +1227,31 @@ const UserPage: React.FC = () => {
                         gap: 1,
                       }}
                     >
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {/* Bot message: left-aligned, full width, speaker button bottom right */}
-                        {msg.from === 'bot' ? (
-                          <Box sx={{ width: '100%' }}>
-                            <Typography
-                              sx={{
-                                color: '#b2ff59',
-                                fontFamily: 'Nunito, sans-serif',
-                                fontSize: 14,
-                                lineHeight: 1.4,
-                                whiteSpace: 'pre-line',
-                                wordBreak: 'break-word',
-                                textAlign: 'left',
-                                width: '100%',
-                                display: 'block',
-                              }}
-                            >
-                              <b>AgroBOT: </b>
-                              <ReactMarkdown>{msg.text}</ReactMarkdown>
-                            </Typography>
-                            <Box
-                              sx={{
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                alignItems: 'center',
-                                mt: 0.5,
-                                gap: 1,
-                              }}
-                            >
-                              {isTTSProcessing && !isAudioPlaying && (
-                                <Typography
-                                  sx={{
-                                    color: '#ff9800',
-                                    fontFamily: 'Nunito, sans-serif',
-                                    fontSize: 12,
-                                    fontWeight: 'bold',
-                                    animation: 'pulse 1.5s infinite',
-                                    '@keyframes pulse': {
-                                      '0%': { opacity: 1 },
-                                      '50%': { opacity: 0.5 },
-                                      '100%': { opacity: 1 },
-                                    },
-                                  }}
-                                >
-                                  PLEASE WAIT...
-                                </Typography>
-                              )}
-                              <IconButton
-                                size='medium'
-                                disabled={isTTSProcessing || isAudioPlaying}
-                                sx={{
-                                  background:
-                                    isTTSProcessing || isAudioPlaying
-                                      ? '#ccc'
-                                      : '#fff',
-                                  color:
-                                    isTTSProcessing || isAudioPlaying
-                                      ? '#666'
-                                      : '#1976d2',
-                                  border: '2px solid #1976d2',
-                                  borderRadius: 2,
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                                  padding: '4px',
-                                  margin: '2px',
-                                  transition: 'background 0.2s, color 0.2s',
-                                  '&:hover': {
-                                    background:
-                                      isTTSProcessing || isAudioPlaying
-                                        ? '#ccc'
-                                        : '#b2ff59',
-                                    color:
-                                      isTTSProcessing || isAudioPlaying
-                                        ? '#666'
-                                        : '#222',
-                                    borderColor: '#388e3c',
-                                  },
-                                }}
-                                aria-label='Listen to response'
-                                onClick={() => handleSpeak(msg.text)}
-                              >
-                                <span
-                                  role='img'
-                                  aria-label='speaker'
-                                  style={{
-                                    fontSize: 28,
-                                    filter: 'drop-shadow(0 1px 2px #fff)',
-                                  }}
-                                >
-                                  🔊
-                                </span>
-                              </IconButton>
-                            </Box>
-                          </Box>
-                        ) : (
-                          // User message: right-aligned as before
-                          <Typography
-                            sx={{
-                              color: 'white',
-                              fontFamily: 'Nunito, sans-serif',
-                              fontSize: 14,
-                              lineHeight: 1.4,
-                              whiteSpace: 'pre-line',
-                              wordBreak: 'break-word',
-                              textAlign: 'right',
-                              width: '100%',
-                              display: 'block',
-                            }}
-                          >
-                            <b>
-                              {userProfile?.personalInfo?.firstName || 'You'}
-                              :{' '}
-                            </b>
-                            <ReactMarkdown>{msg.text}</ReactMarkdown>
-                          </Typography>
+                      <Box
+                        sx={{
+                          color: msg.from === 'user' ? 'white' : '#b2ff59',
+                          fontFamily: 'Nunito, sans-serif',
+                          fontSize: 14,
+                          lineHeight: 1.4,
+                          whiteSpace: 'pre-line',
+                          wordBreak: 'break-word',
+                          textAlign: msg.from === 'user' ? 'right' : 'left',
+                          '& p': { margin: 0 },
+                          '& ul, & ol': {
+                            paddingLeft: '20px',
+                            margin: '8px 0',
+                          },
+                          '& li': { margin: '4px 0' },
+                        }}
+                      >
+                        {msg.from === 'bot' && <b>AgroBOT: </b>}
+                        {msg.from === 'user' && (
+                          <b>
+                            {userProfile?.personalInfo?.firstName || 'You'}
+                            :{' '}
+                          </b>
                         )}
+                        <ReactMarkdown>{msg.text}</ReactMarkdown>
                       </Box>
                     </Box>
                   </Box>
@@ -1234,22 +1273,37 @@ const UserPage: React.FC = () => {
               }}
             >
               <InputBase
-                placeholder={t('user.typeQuery')}
-                value={input}
+                placeholder={
+                  isListening
+                    ? i18n.language === 'ne'
+                      ? 'बोल्नुहोस्...'
+                      : 'Listening...'
+                    : t('user.typeQuery')
+                }
+                value={input || interimTranscript}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
                 sx={{
                   flex: 1,
                   fontFamily: 'Nunito, sans-serif',
                   fontSize: 18,
-                  color: '#29510A',
+                  color: interimTranscript ? '#666' : '#29510A', // Gray for interim results
+                  fontStyle: interimTranscript ? 'italic' : 'normal',
+                  '& input': {
+                    textAlign:
+                      isListening && !input && !interimTranscript
+                        ? 'center'
+                        : 'left',
+                  },
                 }}
+                disabled={isListening && !interimTranscript} // Disable typing while listening
               />
               <IconButton
                 onClick={handleMicClick}
+                disabled={speechSupported === false} // Disable if speech not supported
                 sx={{
                   color: isListening ? '#f44336' : '#29510A',
-                  opacity: 1,
+                  opacity: speechSupported === false ? 0.5 : 1,
                   transition: 'all 0.2s',
                   animation: isListening ? 'pulse 1s infinite' : 'none',
                   '@keyframes pulse': {
@@ -1258,6 +1312,23 @@ const UserPage: React.FC = () => {
                     '100%': { opacity: 1 },
                   },
                 }}
+                title={
+                  speechSupported === false
+                    ? i18n.language === 'ne'
+                      ? 'आवाज पहिचान समर्थित छैन'
+                      : 'Speech recognition not supported'
+                    : isListening
+                      ? i18n.language === 'ne'
+                        ? 'रोक्नुहोस्'
+                        : 'Stop listening'
+                      : input.trim()
+                        ? i18n.language === 'ne'
+                          ? 'पठाउनुहोस्'
+                          : 'Send message'
+                        : i18n.language === 'ne'
+                          ? 'बोल्नुहोस्'
+                          : 'Start voice input'
+                }
               >
                 {isListening ? (
                   <StopIcon sx={{ color: '#f44336', fontSize: 28 }} />
@@ -1366,7 +1437,7 @@ const UserPage: React.FC = () => {
                     .split(/\n\s*\n/)
                     .filter(Boolean)
                     .map((tip, idx) => (
-                      <Typography
+                      <Box
                         key={idx}
                         sx={{
                           color: '#b2ff59',
@@ -1380,11 +1451,17 @@ const UserPage: React.FC = () => {
                           mb: 1,
                           boxShadow: 2,
                           maxWidth: '100%',
+                          '& p': { margin: 0 },
+                          '& ul, & ol': {
+                            paddingLeft: '20px',
+                            margin: '8px 0',
+                          },
+                          '& li': { margin: '4px 0' },
                         }}
                       >
                         <b>{t('user.agroBOT')}:</b>{' '}
                         <ReactMarkdown>{tip}</ReactMarkdown>
-                      </Typography>
+                      </Box>
                     ))}
                 </Box>
               ) : (
@@ -2765,6 +2842,42 @@ const UserPage: React.FC = () => {
                   >
                     {userProfile.personalInfo?.firstName}{' '}
                     {userProfile.personalInfo?.lastName}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            )}
+            {/* Add fallback profile menu item when userProfile is not loaded */}
+            {!userProfile && (
+              <MenuItem
+                onClick={() => {
+                  setSelectedNav(t('user.userInfo'));
+                  handleMoreMenuClose();
+                }}
+                sx={{ display: 'flex', alignItems: 'center', minWidth: 180 }}
+              >
+                <Avatar
+                  sx={{
+                    bgcolor: '#7A8B6F',
+                    width: 32,
+                    height: 32,
+                    fontWeight: 'bold',
+                    fontSize: 16,
+                    mr: 1,
+                  }}
+                >
+                  ?
+                </Avatar>
+                <Box>
+                  <Typography
+                    sx={{
+                      color: '#29510A',
+                      fontWeight: 'bold',
+                      fontFamily: 'Nunito, sans-serif',
+                      fontSize: 14,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Profile (Loading...)
                   </Typography>
                 </Box>
               </MenuItem>

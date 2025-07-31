@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -9,19 +9,62 @@ import {
   Alert,
   Link,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AgricultureOutlined } from '@mui/icons-material';
+import { emailService } from '../services';
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: email, 2: password
-  const [email, setEmail] = useState('');
+  const [searchParams] = useSearchParams();
+
+  // Get email and token from URL params (for reset link)
+  const emailFromUrl = searchParams.get('email') || '';
+  const tokenFromUrl = searchParams.get('token') || '';
+
+  const [step, setStep] = useState(tokenFromUrl ? 2 : 1); // 1: email, 2: new password
+  const [email, setEmail] = useState(emailFromUrl);
+  const [token, setToken] = useState(tokenFromUrl);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Validate token on mount if present
+  useEffect(() => {
+    if (tokenFromUrl && emailFromUrl) {
+      validateToken();
+    }
+  }, [tokenFromUrl, emailFromUrl]);
+
+  const validateToken = async () => {
+    setLoading(true);
+    try {
+      const response = await emailService.validateResetToken({
+        email: emailFromUrl,
+        token: tokenFromUrl,
+      });
+
+      if (response.isValid) {
+        setStep(2);
+        setSuccess(
+          `Hi ${response.firstName || 'there'}, you can now set your new password.`,
+        );
+      } else {
+        setError(
+          'This reset link is invalid or expired. Please request a new one.',
+        );
+        setStep(1);
+      }
+    } catch (err: any) {
+      setError(
+        'This reset link is invalid or expired. Please request a new one.',
+      );
+      setStep(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -40,30 +83,34 @@ const ForgotPasswordPage: React.FC = () => {
     if (error) setError('');
   };
 
+  const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setToken(e.target.value);
+    if (error) setError('');
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
+
     if (!email.trim()) {
       setError('Please enter your email address.');
       setLoading(false);
       return;
     }
+
     try {
-      // Replace with your actual email verification API endpoint
-      const response = await axios.post(
-        'http://localhost:3001/api/auth/check-email',
-        { email },
+      const response = await emailService.requestPasswordReset({ email });
+      setSuccess(
+        'If an account with this email exists, a password reset link has been sent to your email.',
       );
-      if (response.data.exists) {
-        setStep(2);
-        setSuccess('Email verified! Please enter your new password.');
-      } else {
-        setError('Email not found. Please check and try again.');
-      }
+      // Don't automatically advance step - user needs to check email
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Email verification failed.');
+      // Show generic message for security (don't reveal if email exists)
+      setSuccess(
+        'If an account with this email exists, a password reset link has been sent to your email.',
+      );
     } finally {
       setLoading(false);
     }
@@ -80,31 +127,42 @@ const ForgotPasswordPage: React.FC = () => {
       setLoading(false);
       return;
     }
+
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match.');
       setLoading(false);
       return;
     }
+
     if (newPassword.length < 6) {
       setError('Password must be at least 6 characters.');
       setLoading(false);
       return;
     }
 
+    // If no token from URL, user needs to enter it manually
+    if (!token && !tokenFromUrl) {
+      setError('Please enter the reset token from your email.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Replace with your actual password reset API endpoint
-      const response = await axios.post(
-        'http://localhost:3001/api/auth/reset-password',
-        { email, newPassword },
+      const response = await emailService.resetPassword({
+        email: email,
+        token: token || tokenFromUrl,
+        newPassword: newPassword,
+      });
+
+      setSuccess(
+        'Password reset successful! You can now sign in with your new password.',
       );
-      if (response.data.success) {
-        setSuccess('Password reset successful! You can now sign in.');
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        setError('Failed to reset password.');
-      }
+      setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Password reset failed.');
+      setError(
+        err.message ||
+          'Password reset failed. Please try again or request a new reset link.',
+      );
     } finally {
       setLoading(false);
     }
@@ -156,8 +214,10 @@ const ForgotPasswordPage: React.FC = () => {
             </Typography>
             <Typography variant='body1' sx={{ color: 'text.secondary', mb: 2 }}>
               {step === 1
-                ? 'Enter your email address to begin password reset.'
-                : 'Enter your new password below.'}
+                ? "Enter your email address and we'll send you a reset link."
+                : tokenFromUrl
+                  ? 'Enter your new password below.'
+                  : 'Enter the reset token from your email and your new password.'}
             </Typography>
           </Box>
 
@@ -208,18 +268,66 @@ const ForgotPasswordPage: React.FC = () => {
                   },
                 }}
               >
-                {loading ? 'Checking...' : 'Next'}
+                {loading ? 'Sending...' : 'Send Reset Link'}
               </Button>
+              <Typography
+                variant='body2'
+                sx={{ textAlign: 'center', mb: 2, color: 'text.secondary' }}
+              >
+                Have a reset token?{' '}
+                <Link
+                  component='button'
+                  type='button'
+                  onClick={() => setStep(2)}
+                  sx={{
+                    color: '#4caf50',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  Enter it here
+                </Link>
+              </Typography>
             </Box>
           )}
 
-          {/* Step 2: New Password Entry */}
+          {/* Step 2: Token and New Password Entry */}
           {step === 2 && (
             <Box
               component='form'
               onSubmit={handlePasswordSubmit}
               sx={{ width: '100%' }}
             >
+              {!tokenFromUrl && (
+                <>
+                  <TextField
+                    fullWidth
+                    label='Email Address'
+                    name='email'
+                    type='email'
+                    value={email}
+                    onChange={handleEmailChange}
+                    required
+                    sx={{ mb: 3 }}
+                    placeholder='Enter your email address'
+                  />
+                  <TextField
+                    fullWidth
+                    label='Reset Token'
+                    name='token'
+                    type='text'
+                    value={token}
+                    onChange={handleTokenChange}
+                    required
+                    sx={{ mb: 3 }}
+                    placeholder='Enter the 6-digit code from your email'
+                    helperText='Check your email for the reset token'
+                  />
+                </>
+              )}
               <TextField
                 fullWidth
                 label='New Password'
@@ -230,6 +338,7 @@ const ForgotPasswordPage: React.FC = () => {
                 required
                 sx={{ mb: 3 }}
                 placeholder='Enter your new password'
+                helperText='Password must be at least 6 characters'
               />
               <TextField
                 fullWidth
@@ -261,6 +370,29 @@ const ForgotPasswordPage: React.FC = () => {
               >
                 {loading ? 'Resetting...' : 'Reset Password'}
               </Button>
+              {!tokenFromUrl && (
+                <Typography
+                  variant='body2'
+                  sx={{ textAlign: 'center', mb: 2, color: 'text.secondary' }}
+                >
+                  Need a reset link?{' '}
+                  <Link
+                    component='button'
+                    type='button'
+                    onClick={() => setStep(1)}
+                    sx={{
+                      color: '#4caf50',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Request one
+                  </Link>
+                </Typography>
+              )}
             </Box>
           )}
 
