@@ -46,6 +46,10 @@ import plantService, {
 } from '../services/plantService';
 import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { fetchTTSAudio } from '../services/TTSServices';
+
+// Add at the top, after imports
+const SHIMMER_TTS_API = 'http://localhost:5000/v1/audio/speech';
 
 // Helper function to parse agricultural guide content into sections
 const parseAgriculturalGuide = (content: string) => {
@@ -551,7 +555,7 @@ const UserPage: React.FC = () => {
         recognition.stop();
       }
     };
-  }, [i18n.language]);
+  }, [i18n.language, recognition]);
 
   // Update recognition language when i18n language changes
   React.useEffect(() => {
@@ -1086,28 +1090,130 @@ const UserPage: React.FC = () => {
                           msg.from === 'user'
                             ? 'none'
                             : '1px solid rgba(255,255,255,0.2)',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1,
                       }}
                     >
-                      <Typography
-                        sx={{
-                          color: msg.from === 'user' ? 'white' : '#b2ff59',
-                          fontFamily: 'Nunito, sans-serif',
-                          fontSize: 14,
-                          lineHeight: 1.4,
-                          whiteSpace: 'pre-line',
-                          wordBreak: 'break-word',
-                          textAlign: msg.from === 'user' ? 'right' : 'left',
-                        }}
-                      >
-                        {msg.from === 'bot' && <b>AgroBOT: </b>}
-                        {msg.from === 'user' && (
-                          <b>
-                            {userProfile?.personalInfo?.firstName || 'You'}
-                            :{' '}
-                          </b>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        {/* Bot message: left-aligned, full width, speaker button bottom right */}
+                        {msg.from === 'bot' ? (
+                          <Box sx={{ width: '100%' }}>
+                            <Typography
+                              sx={{
+                                color: '#b2ff59',
+                                fontFamily: 'Nunito, sans-serif',
+                                fontSize: 14,
+                                lineHeight: 1.4,
+                                whiteSpace: 'pre-line',
+                                wordBreak: 'break-word',
+                                textAlign: 'left',
+                                width: '100%',
+                                display: 'block',
+                              }}
+                            >
+                              <b>AgroBOT: </b>
+                              <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            </Typography>
+                            <Box
+                              sx={{
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                mt: 0.5,
+                                gap: 1,
+                              }}
+                            >
+                              {isTTSProcessing && !isAudioPlaying && (
+                                <Typography
+                                  sx={{
+                                    color: '#ff9800',
+                                    fontFamily: 'Nunito, sans-serif',
+                                    fontSize: 12,
+                                    fontWeight: 'bold',
+                                    animation: 'pulse 1.5s infinite',
+                                    '@keyframes pulse': {
+                                      '0%': { opacity: 1 },
+                                      '50%': { opacity: 0.5 },
+                                      '100%': { opacity: 1 },
+                                    },
+                                  }}
+                                >
+                                  PLEASE WAIT...
+                                </Typography>
+                              )}
+                              <IconButton
+                                size='medium'
+                                disabled={isTTSProcessing || isAudioPlaying}
+                                sx={{
+                                  background:
+                                    isTTSProcessing || isAudioPlaying
+                                      ? '#ccc'
+                                      : '#fff',
+                                  color:
+                                    isTTSProcessing || isAudioPlaying
+                                      ? '#666'
+                                      : '#1976d2',
+                                  border: '2px solid #1976d2',
+                                  borderRadius: 2,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                                  padding: '4px',
+                                  margin: '2px',
+                                  transition: 'background 0.2s, color 0.2s',
+                                  '&:hover': {
+                                    background:
+                                      isTTSProcessing || isAudioPlaying
+                                        ? '#ccc'
+                                        : '#b2ff59',
+                                    color:
+                                      isTTSProcessing || isAudioPlaying
+                                        ? '#666'
+                                        : '#222',
+                                    borderColor: '#388e3c',
+                                  },
+                                }}
+                                aria-label='Listen to response'
+                                onClick={() => handleSpeak(msg.text)}
+                              >
+                                <span
+                                  role='img'
+                                  aria-label='speaker'
+                                  style={{
+                                    fontSize: 28,
+                                    filter: 'drop-shadow(0 1px 2px #fff)',
+                                  }}
+                                >
+                                  🔊
+                                </span>
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        ) : (
+                          // User message: right-aligned as before
+                          <Typography
+                            sx={{
+                              color: 'white',
+                              fontFamily: 'Nunito, sans-serif',
+                              fontSize: 14,
+                              lineHeight: 1.4,
+                              whiteSpace: 'pre-line',
+                              wordBreak: 'break-word',
+                              textAlign: 'right',
+                              width: '100%',
+                              display: 'block',
+                            }}
+                          >
+                            <b>
+                              {userProfile?.personalInfo?.firstName || 'You'}
+                              :{' '}
+                            </b>
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                          </Typography>
                         )}
-                        <ReactMarkdown>{msg.text}</ReactMarkdown>
-                      </Typography>
+                      </Box>
                     </Box>
                   </Box>
                 ))
@@ -2338,6 +2444,70 @@ const UserPage: React.FC = () => {
         )}
       </Box>
     );
+  };
+
+  // Inside UserPage component, after other handlers
+  const [isTTSProcessing, setIsTTSProcessing] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  const handleSpeak = async (text: string) => {
+    if (isTTSProcessing) {
+      alert(
+        'Please wait, TTS is already processing. Please wait for the current audio to finish.',
+      );
+      return;
+    }
+
+    setIsTTSProcessing(true);
+
+    try {
+      const audioBlob = await fetchTTSAudio(
+        text,
+        'alloy',
+        (status: {
+          message: string;
+          queuePosition?: number;
+          estimatedWait?: number;
+        }) => {
+          // Show status updates to user
+          if (status.queuePosition && status.queuePosition > 1) {
+            alert(
+              `Please wait, you are in queue position ${status.queuePosition}. Estimated wait: ${status.estimatedWait} seconds`,
+            );
+          } else if (status.message) {
+            alert(status.message);
+          }
+        },
+      );
+
+      const url = URL.createObjectURL(audioBlob);
+      const audio = new Audio(url);
+
+      // Remove "PLEASE WAIT" when audio starts playing
+      audio.onplay = () => {
+        setIsTTSProcessing(false);
+        setIsAudioPlaying(true);
+      };
+
+      // Play audio and re-enable button when finished
+      audio.onended = () => {
+        setIsTTSProcessing(false);
+        setIsAudioPlaying(false);
+        URL.revokeObjectURL(url); // Clean up the blob URL
+      };
+
+      audio.onerror = () => {
+        setIsTTSProcessing(false);
+        setIsAudioPlaying(false);
+        URL.revokeObjectURL(url);
+        alert('Failed to play audio');
+      };
+
+      audio.play();
+    } catch (err) {
+      setIsTTSProcessing(false);
+      alert('Failed to play audio: ' + err);
+    }
   };
 
   return (
