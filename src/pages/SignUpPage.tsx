@@ -208,8 +208,16 @@ const SignUpPage: React.FC = () => {
 
           if (completeResponse.registrationComplete) {
             setSuccess(t('signup.accountCreated'));
+            // Show options for email verification or continue to app
             setTimeout(() => {
-              navigate('/user');
+              const shouldVerify = window.confirm(
+                'Registration successful! Would you like to verify your email now for enhanced security features?',
+              );
+              if (shouldVerify) {
+                navigate('/verify-email');
+              } else {
+                navigate('/user');
+              }
             }, 2000);
             return;
           }
