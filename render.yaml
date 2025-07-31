@@ -4,6 +4,7 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
+    pullRequestPreviewsEnabled: false
     envVars:
       - key: REACT_APP_API_URL
         value: https://agroconnect-backend-hl8l.onrender.com/api
@@ -20,11 +21,3 @@ services:
       - path: /*
         name: Cache-Control
         value: no-cache
-    # Handle SPA routing - all routes should serve index.html
-    routes:
-      - type: rewrite
-        source: /static/*
-        destination: /static/:splat
-      - type: rewrite
-        source: /*
-        destination: /index.html
