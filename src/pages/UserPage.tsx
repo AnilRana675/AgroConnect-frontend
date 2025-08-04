@@ -48,9 +48,6 @@ import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { fetchTTSAudio } from '../services/TTSServices';
 
-// Add at the top, after imports
-const SHIMMER_TTS_API = 'http://localhost:5000/v1/audio/speech';
-
 // Helper function to parse agricultural guide content into sections
 const parseAgriculturalGuide = (content: string) => {
   const sections = [];

@@ -175,7 +175,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [language, t]); // Removed problematic dependencies
+  }, [language, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update language when i18n language changes
   useEffect(() => {

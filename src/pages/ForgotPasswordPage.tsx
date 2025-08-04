@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -30,14 +30,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Validate token on mount if present
-  useEffect(() => {
-    if (tokenFromUrl && emailFromUrl) {
-      validateToken();
-    }
-  }, [tokenFromUrl, emailFromUrl]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     setLoading(true);
     try {
       const response = await emailService.validateResetToken({
@@ -64,7 +57,14 @@ const ForgotPasswordPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [emailFromUrl, tokenFromUrl]);
+
+  // Validate token on mount if present
+  useEffect(() => {
+    if (tokenFromUrl && emailFromUrl) {
+      validateToken();
+    }
+  }, [tokenFromUrl, emailFromUrl, validateToken]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -101,7 +101,7 @@ const ForgotPasswordPage: React.FC = () => {
     }
 
     try {
-      const response = await emailService.requestPasswordReset({ email });
+      await emailService.requestPasswordReset({ email });
       setSuccess(
         'If an account with this email exists, a password reset link has been sent to your email.',
       );
@@ -148,7 +148,7 @@ const ForgotPasswordPage: React.FC = () => {
     }
 
     try {
-      const response = await emailService.resetPassword({
+      await emailService.resetPassword({
         email: email,
         token: token || tokenFromUrl,
         newPassword: newPassword,

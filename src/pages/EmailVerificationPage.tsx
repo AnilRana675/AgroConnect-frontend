@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -29,17 +29,10 @@ const EmailVerificationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [autoVerifying, setAutoVerifying] = useState(false);
 
-  // Auto-verify if token and email are in URL
-  useEffect(() => {
-    if (tokenFromUrl && emailFromUrl) {
-      handleAutoVerify();
-    }
-  }, [tokenFromUrl, emailFromUrl]);
-
-  const handleAutoVerify = async () => {
+  const handleAutoVerify = useCallback(async () => {
     setAutoVerifying(true);
     try {
-      const response = await emailService.verifyEmail({
+      await emailService.verifyEmail({
         email: emailFromUrl,
         token: tokenFromUrl,
       });
@@ -53,7 +46,14 @@ const EmailVerificationPage: React.FC = () => {
     } finally {
       setAutoVerifying(false);
     }
-  };
+  }, [emailFromUrl, tokenFromUrl, navigate]);
+
+  // Auto-verify if token and email are in URL
+  useEffect(() => {
+    if (tokenFromUrl && emailFromUrl) {
+      handleAutoVerify();
+    }
+  }, [tokenFromUrl, emailFromUrl, handleAutoVerify]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -84,7 +84,7 @@ const EmailVerificationPage: React.FC = () => {
     }
 
     try {
-      const response = await emailService.verifyEmail({ email, token });
+      await emailService.verifyEmail({ email, token });
       setSuccess('Email verified successfully! You can now sign in.');
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
