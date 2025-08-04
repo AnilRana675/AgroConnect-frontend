@@ -354,6 +354,38 @@ const UserPage: React.FC = () => {
     }
   }, [i18n.language, t, selectedNav]);
 
+  // Sync language preference with backend when i18n language changes
+  React.useEffect(() => {
+    const syncLanguageWithBackend = async () => {
+      try {
+        const user = authService.getStoredUser();
+        if (user && user._id) {
+          // Check if user's stored language differs from current i18n language
+          const currentLanguage = i18n.language;
+          if (user.preferredLanguage !== currentLanguage) {
+            // Update backend
+            await api.put('/auth/language', { language: currentLanguage });
+
+            // Update stored user data
+            const updatedUser = { ...user, preferredLanguage: currentLanguage };
+            authService.setStoredUser(updatedUser);
+
+            console.log(
+              `Language preference synced with backend: ${currentLanguage}`,
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          'Failed to sync language preference with backend:',
+          error,
+        );
+      }
+    };
+
+    syncLanguageWithBackend();
+  }, [i18n.language]);
+
   // First-time prompt options
   const promptOptions = [
     t('user.newToFarming'),
@@ -443,6 +475,17 @@ const UserPage: React.FC = () => {
         const user = await authService.getCurrentUser();
         console.log('User profile fetched successfully:', user);
         setUserProfile(user);
+
+        // Initialize language from user profile if available
+        if (
+          user.preferredLanguage &&
+          user.preferredLanguage !== i18n.language
+        ) {
+          console.log(
+            `Initializing language from user profile: ${user.preferredLanguage}`,
+          );
+          i18n.changeLanguage(user.preferredLanguage);
+        }
       } catch (err: any) {
         console.error('Failed to fetch user profile:', err);
         console.error('Error details:', {
@@ -461,7 +504,7 @@ const UserPage: React.FC = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [i18n]);
 
   // On mount, if user has onboardingStatus, set firstVisit to false
   React.useEffect(() => {
@@ -796,7 +839,6 @@ const UserPage: React.FC = () => {
         const response = await aiService.getAdvice({
           question: textToSend,
           userId: user._id,
-          userLanguage: i18n.language as 'en' | 'ne',
         });
         // Remove loading message and add AI response
         setMessages(prev => [

@@ -31,6 +31,7 @@ export interface User {
   loginCredentials: {
     email: string;
   };
+  preferredLanguage?: string;
   createdAt: string;
   updatedAt: string;
   onboardingStatus?: string;
@@ -156,6 +157,11 @@ class AuthService {
   getStoredUser(): User | null {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
+  }
+
+  // Set stored user
+  setStoredUser(user: User): void {
+    localStorage.setItem('user', JSON.stringify(user));
   }
 
   // Get stored token
