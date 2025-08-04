@@ -354,6 +354,38 @@ const UserPage: React.FC = () => {
     }
   }, [i18n.language, t, selectedNav]);
 
+  // Sync language preference with backend when i18n language changes
+  React.useEffect(() => {
+    const syncLanguageWithBackend = async () => {
+      try {
+        const user = authService.getStoredUser();
+        if (user && user._id) {
+          // Check if user's stored language differs from current i18n language
+          const currentLanguage = i18n.language;
+          if (user.preferredLanguage !== currentLanguage) {
+            // Update backend
+            await api.put('/auth/language', { language: currentLanguage });
+
+            // Update stored user data
+            const updatedUser = { ...user, preferredLanguage: currentLanguage };
+            authService.setStoredUser(updatedUser);
+
+            console.log(
+              `Language preference synced with backend: ${currentLanguage}`,
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          'Failed to sync language preference with backend:',
+          error,
+        );
+      }
+    };
+
+    syncLanguageWithBackend();
+  }, [i18n.language]);
+
   // First-time prompt options
   const promptOptions = [
     t('user.newToFarming'),
@@ -379,7 +411,36 @@ const UserPage: React.FC = () => {
   const [personalizedTips, setPersonalizedTips] = useState<string | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
   const [tipsError, setTipsError] = useState('');
-  const [lastTipsFetch, setLastTipsFetch] = useState<number | null>(null);
+
+  // Handle language switching for cached personalized tips
+  React.useEffect(() => {
+    const cachedTips = localStorage.getItem('agroConnect_weeklyTips');
+    if (cachedTips) {
+      try {
+        const parsedCache = JSON.parse(cachedTips);
+        const tipsMultilingual = parsedCache.tipsMultilingual;
+        const user = authService.getStoredUser();
+
+        // Only use cached tips if they belong to the current user
+        if (tipsMultilingual && user && parsedCache.userId === user._id) {
+          const currentLanguage = i18n.language || 'en';
+          let newTips = '';
+
+          if (currentLanguage === 'ne' && tipsMultilingual.ne) {
+            newTips = tipsMultilingual.ne;
+          } else if (tipsMultilingual.en) {
+            newTips = tipsMultilingual.en;
+          }
+
+          if (newTips) {
+            setPersonalizedTips(newTips);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing cached tips:', error);
+      }
+    }
+  }, [i18n.language]); // Don't include personalizedTips to avoid infinite loops
 
   // More menu state
   const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
@@ -443,6 +504,17 @@ const UserPage: React.FC = () => {
         const user = await authService.getCurrentUser();
         console.log('User profile fetched successfully:', user);
         setUserProfile(user);
+
+        // Initialize language from user profile if available
+        if (
+          user.preferredLanguage &&
+          user.preferredLanguage !== i18n.language
+        ) {
+          console.log(
+            `Initializing language from user profile: ${user.preferredLanguage}`,
+          );
+          i18n.changeLanguage(user.preferredLanguage);
+        }
       } catch (err: any) {
         console.error('Failed to fetch user profile:', err);
         console.error('Error details:', {
@@ -461,7 +533,7 @@ const UserPage: React.FC = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [i18n]);
 
   // On mount, if user has onboardingStatus, set firstVisit to false
   React.useEffect(() => {
@@ -477,7 +549,8 @@ const UserPage: React.FC = () => {
       try {
         const cached = localStorage.getItem('agroConnect_weeklyTips');
         if (cached) {
-          const { tips, timestamp, userId } = JSON.parse(cached);
+          const { tips, timestamp, userId, tipsMultilingual } =
+            JSON.parse(cached);
           const storedUser = authService.getStoredUser();
 
           // Only use cached tips if they belong to the current user
@@ -487,8 +560,23 @@ const UserPage: React.FC = () => {
 
             // Check if cached tips are still valid (less than 1 week old)
             if (now - timestamp < oneWeekInMs) {
-              setPersonalizedTips(tips);
-              setLastTipsFetch(timestamp);
+              // Load tips in the user's current language if multilingual data is available
+              if (tipsMultilingual) {
+                const currentLanguage = i18n.language || 'en';
+                let tipsToShow = '';
+
+                if (currentLanguage === 'ne' && tipsMultilingual.ne) {
+                  tipsToShow = tipsMultilingual.ne;
+                } else if (tipsMultilingual.en) {
+                  tipsToShow = tipsMultilingual.en;
+                } else {
+                  tipsToShow = tips; // Fallback to original tips
+                }
+
+                setPersonalizedTips(tipsToShow);
+              } else {
+                setPersonalizedTips(tips);
+              }
             } else {
               // Clear expired cache
               localStorage.removeItem('agroConnect_weeklyTips');
@@ -503,7 +591,7 @@ const UserPage: React.FC = () => {
     };
 
     loadCachedTips();
-  }, []);
+  }, [i18n.language]); // Add i18n.language to reload cached tips when language changes
 
   // Initialize speech recognition
   React.useEffect(() => {
@@ -796,7 +884,6 @@ const UserPage: React.FC = () => {
         const response = await aiService.getAdvice({
           question: textToSend,
           userId: user._id,
-          userLanguage: i18n.language as 'en' | 'ne',
         });
         // Remove loading message and add AI response
         setMessages(prev => [
@@ -831,41 +918,85 @@ const UserPage: React.FC = () => {
       const now = Date.now();
       const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-      if (
-        personalizedTips &&
-        lastTipsFetch &&
-        now - lastTipsFetch < oneWeekInMs
-      ) {
-        // Use cached tips if they're less than a week old
-        return;
+      // Check cache first
+      const cachedTips = localStorage.getItem('agroConnect_weeklyTips');
+      if (cachedTips) {
+        try {
+          const parsedCache = JSON.parse(cachedTips);
+          const { timestamp, userId, tipsMultilingual } = parsedCache;
+
+          // Use cached tips if they're valid and belong to current user
+          if (
+            userId === user._id &&
+            tipsMultilingual &&
+            now - timestamp < oneWeekInMs
+          ) {
+            const currentLanguage = i18n.language || 'en';
+            let tips = '';
+
+            if (currentLanguage === 'ne' && tipsMultilingual.ne) {
+              tips = tipsMultilingual.ne;
+            } else if (tipsMultilingual.en) {
+              tips = tipsMultilingual.en;
+            }
+
+            if (tips) {
+              setPersonalizedTips(tips);
+              return; // Use cached version, don't fetch
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing cached tips:', error);
+          localStorage.removeItem('agroConnect_weeklyTips');
+        }
       }
 
+      // Fetch new tips if cache is invalid or missing
       setTipsLoading(true);
       setTipsError('');
       try {
         const res = await api.get(`/ai/weekly-tips/${user._id}`);
-        const tips = res.data.data?.tips || 'No tips available.';
-        setPersonalizedTips(tips);
-        setLastTipsFetch(now);
+        const tipsData =
+          res.data.data?.tipsMultilingual || res.data.tipsMultilingual;
+        const currentLanguage = i18n.language || 'en';
 
-        // Store in localStorage for persistence across sessions
+        // Extract tips in user's current language
+        let tips = 'No tips available.';
+        if (tipsData) {
+          if (currentLanguage === 'ne' && tipsData.ne) {
+            tips = tipsData.ne;
+          } else if (tipsData.en) {
+            tips = tipsData.en;
+          } else {
+            // Fallback to the single tips format if multilingual isn't available
+            tips = res.data.data?.tips || res.data.tips || 'No tips available.';
+          }
+        } else {
+          // Fallback to the single tips format if multilingual isn't available
+          tips = res.data.data?.tips || res.data.tips || 'No tips available.';
+        }
+
+        setPersonalizedTips(tips);
+
+        // Store both language versions in localStorage for persistence
         localStorage.setItem(
           'agroConnect_weeklyTips',
           JSON.stringify({
             tips,
+            tipsMultilingual: tipsData,
             timestamp: now,
             userId: user._id,
           }),
         );
       } catch (err: any) {
-        setTipsError(err.message || 'Failed to load personalized messages.');
+        setTipsError(err.message || t('user.tipsError'));
         setPersonalizedTips(null);
       } finally {
         setTipsLoading(false);
       }
     };
     fetchTips();
-  }, [selectedNav, personalizedTips, lastTipsFetch, t]);
+  }, [selectedNav, t, i18n.language]); // Include i18n.language as required by lint
 
   // Image handling functions
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1476,7 +1607,7 @@ const UserPage: React.FC = () => {
               variant='h4'
               sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
             >
-              Personalized Messages
+              {t('user.personalizedMessages')}
             </Typography>
             <Box
               sx={{
@@ -1500,7 +1631,7 @@ const UserPage: React.FC = () => {
                     textAlign: 'center',
                   }}
                 >
-                  Loading personalized tips...
+                  {t('user.loadingTips')}
                 </Typography>
               ) : tipsError ? (
                 <Typography
