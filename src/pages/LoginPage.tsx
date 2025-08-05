@@ -17,10 +17,49 @@ import { useTranslation } from 'react-i18next';
 import { authService } from '../services';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
+// Common styles
+const commonStyles = {
+  buttonBase: {
+    py: 1.5,
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    fontFamily: 'Nunito, sans-serif',
+  },
+  primaryButton: {
+    backgroundColor: '#4caf50',
+    '&:hover': { backgroundColor: '#45a049' },
+  },
+  secondaryButton: {
+    backgroundColor: '#43A047',
+    color: 'white',
+    borderRadius: 2,
+    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.15)',
+    border: '2px solid #388E3C',
+    textTransform: 'none',
+    '&:hover': {
+      backgroundColor: '#388E3C',
+      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+    },
+  },
+  linkStyle: {
+    color: '#4caf50',
+    fontWeight: 'bold',
+    textDecoration: 'none',
+    fontFamily: 'Nunito, sans-serif',
+    '&:hover': { textDecoration: 'underline' },
+  },
+};
+
+interface FormData {
+  email: string;
+  password: string;
+}
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
   });
@@ -34,7 +73,6 @@ const LoginPage: React.FC = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -44,22 +82,13 @@ const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      console.log('🔐 Attempting login with:', formData.email);
       const response = await authService.login(formData);
-      console.log('🔐 Login response:', response);
-
       if (response.token) {
-        console.log(
-          '🔐 Login successful, token received. Navigating to /user...',
-        );
-        // Navigate to user page
         navigate('/user');
       } else {
-        console.error('🔐 Login response missing token:', response);
         setError('Login failed: No token received');
       }
     } catch (err: any) {
-      console.error('🔐 Login error:', err);
       setError(err.message || t('login.loginFailed'));
     } finally {
       setLoading(false);
@@ -131,7 +160,6 @@ const LoginPage: React.FC = () => {
               backdropFilter: 'blur(10px)',
             }}
           >
-            {/* Logo and Title */}
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               <Box
                 sx={{
@@ -177,14 +205,12 @@ const LoginPage: React.FC = () => {
               </Typography>
             </Box>
 
-            {/* Error Alert */}
             {error && (
               <Alert severity='error' sx={{ mb: 3 }}>
                 {error}
               </Alert>
             )}
 
-            {/* Login Form */}
             <Box
               component='form'
               onSubmit={handleSubmit}
@@ -242,101 +268,49 @@ const LoginPage: React.FC = () => {
                 size='large'
                 disabled={loading}
                 sx={{
-                  backgroundColor: '#4caf50',
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  mb: 3,
-                  '&:hover': {
-                    backgroundColor: '#45a049',
-                  },
+                  ...commonStyles.buttonBase,
+                  ...commonStyles.primaryButton,
                 }}
               >
                 {loading ? t('login.signingIn') : t('login.signIn')}
               </Button>
-
-              {/* Demo Button */}
-              <Button
-                fullWidth
-                variant='outlined'
-                size='large'
-                onClick={() => navigate('/')}
-                sx={{
-                  borderColor: '#4caf50',
-                  color: '#4caf50',
-                  py: 1.5,
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  mb: 3,
-                  '&:hover': {
-                    borderColor: '#45a049',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                  },
-                }}
-              >
-                {t('login.cancel')}
-              </Button>
-
-              {/* Links */}
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography
-                  variant='body2'
-                  sx={{ mb: 2, fontFamily: 'Nunito, sans-serif' }}
-                >
-                  {t('login.noAccount')}{' '}
-                  <Link
-                    component='button'
-                    type='button'
-                    onClick={() => navigate('/signup')}
-                    sx={{
-                      color: '#4caf50',
-                      fontWeight: 'bold',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                      fontFamily: 'Nunito, sans-serif',
-                    }}
-                  >
-                    {t('login.signUp')}
-                  </Link>
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{ fontFamily: 'Nunito, sans-serif' }}
-                >
-                  <Link
-                    component='button'
-                    type='button'
-                    onClick={() => navigate('/forgot-password')}
-                    sx={{
-                      color: '#4caf50',
-                      fontWeight: 'bold',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                      fontFamily: 'Nunito, sans-serif',
-                    }}
-                  >
-                    {t('login.forgotPassword')}
-                  </Link>
-                </Typography>
-              </Box>
             </Box>
 
-            {/* Back to Landing */}
-            <Box sx={{ textAlign: 'center', mt: 3 }}>
+            {/* Navigation Links */}
+            <Box sx={{ mt: 3, textAlign: 'center' }}>
+              <Typography
+                variant='body2'
+                sx={{ mb: 2, fontFamily: 'Nunito, sans-serif' }}
+              >
+                {t('login.noAccount')}{' '}
+                <Link
+                  component='button'
+                  onClick={() => navigate('/signup')}
+                  sx={commonStyles.linkStyle}
+                >
+                  {t('login.signUp')}
+                </Link>
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{ mb: 2, fontFamily: 'Nunito, sans-serif' }}
+              >
+                <Link
+                  component='button'
+                  onClick={() => navigate('/forgot-password')}
+                  sx={commonStyles.linkStyle}
+                >
+                  {t('login.forgotPassword')}
+                </Link>
+              </Typography>
               <Button
-                variant='text'
+                variant='contained'
                 onClick={() => navigate('/')}
                 sx={{
-                  color: '#666',
-                  textTransform: 'none',
-                  fontFamily: 'Nunito, sans-serif',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0,0,0,0.04)',
-                  },
+                  ...commonStyles.buttonBase,
+                  ...commonStyles.secondaryButton,
+                  px: 3,
+                  mt: 2,
                 }}
               >
                 {t('login.backToHome')}
