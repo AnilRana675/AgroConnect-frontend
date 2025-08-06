@@ -334,7 +334,7 @@ const UserPage: React.FC = () => {
     // Map the current selectedNav to the new language
     if (selectedNav === 'Question' || selectedNav === 'प्रश्न') {
       setSelectedNav(t('user.question'));
-    } else if (selectedNav === 'Messages' || selectedNav === 'सन्देश') {
+    } else if (selectedNav === 'Message' || selectedNav === 'सन्देश') {
       setSelectedNav(t('user.message'));
     } else if (
       selectedNav === 'Image Query' ||
@@ -905,7 +905,12 @@ const UserPage: React.FC = () => {
   // Fetch personalized messages (weekly tips) when 'Message' tab is selected
   React.useEffect(() => {
     const fetchTips = async () => {
-      if (selectedNav !== t('user.message')) return;
+      if (
+        selectedNav !== t('user.message') &&
+        selectedNav !== 'Message' &&
+        selectedNav !== 'सन्देश'
+      )
+        return;
 
       const user = authService.getStoredUser();
       if (!user || !user._id) {

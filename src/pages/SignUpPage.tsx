@@ -627,76 +627,108 @@ const SignUpPage: React.FC = () => {
               </Box>
             </form>
 
-            {/* Links */}
-            <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Typography
-                variant='body2'
-                sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
-              >
-                {t('signup.alreadyHaveAccount')}{' '}
-                <Link
-                  component='button'
-                  type='button'
-                  onClick={() => navigate('/login')}
+            {/* Links - Only show on step 1 */}
+            {step === 1 && (
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
+                <Typography
+                  variant='body2'
+                  sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
+                >
+                  {t('signup.alreadyHaveAccount')}{' '}
+                  <Link
+                    component='button'
+                    type='button'
+                    onClick={() => navigate('/login')}
+                    sx={{
+                      color: '#4caf50',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                      fontFamily: 'Nunito, sans-serif',
+                    }}
+                  >
+                    {t('signup.signIn')}
+                  </Link>
+                </Typography>
+                <Typography
+                  variant='body2'
+                  sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
+                >
+                  <Link
+                    component='button'
+                    type='button'
+                    onClick={() => navigate('/forgot-password')}
+                    sx={{
+                      color: '#4caf50',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                      fontFamily: 'Nunito, sans-serif',
+                    }}
+                  >
+                    {t('signup.forgotPassword')}
+                  </Link>
+                </Typography>
+                <Button
+                  variant='contained'
+                  onClick={() => navigate('/')}
                   sx={{
-                    color: '#4caf50',
+                    backgroundColor: '#43A047',
+                    color: 'white',
                     fontWeight: 'bold',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
+                    fontSize: '1rem',
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.15)',
+                    border: '2px solid #388E3C',
+                    mt: 2,
+                    textTransform: 'none',
                     fontFamily: 'Nunito, sans-serif',
+                    '&:hover': {
+                      backgroundColor: '#388E3C',
+                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+                    },
                   }}
                 >
-                  {t('signup.signIn')}
-                </Link>
-              </Typography>
-              <Typography
-                variant='body2'
-                sx={{ fontFamily: 'Nunito, sans-serif', mb: 2 }}
-              >
-                <Link
-                  component='button'
-                  type='button'
-                  onClick={() => navigate('/forgot-password')}
+                  {t('signup.backToHome')}
+                </Button>
+              </Box>
+            )}
+
+            {/* For steps after 1, just show the back to home button */}
+            {step > 1 && (
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
+                <Button
+                  variant='contained'
+                  onClick={() => navigate('/')}
                   sx={{
-                    color: '#4caf50',
+                    backgroundColor: '#43A047',
+                    color: 'white',
                     fontWeight: 'bold',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
+                    fontSize: '1rem',
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px 0 rgba(67,160,71,0.15)',
+                    border: '2px solid #388E3C',
+                    mt: 2,
+                    textTransform: 'none',
                     fontFamily: 'Nunito, sans-serif',
+                    '&:hover': {
+                      backgroundColor: '#388E3C',
+                      boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
+                    },
                   }}
                 >
-                  {t('signup.forgotPassword')}
-                </Link>
-              </Typography>
-              <Button
-                variant='contained'
-                onClick={() => navigate('/')}
-                sx={{
-                  backgroundColor: '#43A047',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px 0 rgba(67,160,71,0.15)',
-                  border: '2px solid #388E3C',
-                  mt: 2,
-                  textTransform: 'none',
-                  fontFamily: 'Nunito, sans-serif',
-                  '&:hover': {
-                    backgroundColor: '#388E3C',
-                    boxShadow: '0 4px 16px 0 rgba(67,160,71,0.25)',
-                  },
-                }}
-              >
-                {t('signup.backToHome')}
-              </Button>
-            </Box>
+                  {t('signup.backToHome')}
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Container>
       </Box>
