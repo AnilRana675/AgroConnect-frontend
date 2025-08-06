@@ -28,7 +28,6 @@ export type {
   AIDiagnosisRequest,
   AIDiagnosisResponse,
   AIWeeklyTipsResponse,
-  AIServiceStatus,
 } from './aiService';
 
 export type { PlantIdentificationResult } from './plantService';

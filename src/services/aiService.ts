@@ -18,8 +18,9 @@ export interface AIAdviceResponse {
   metadata: {
     requestId: string;
     responseTime: string;
-    service: string;
-    model: string;
+    service: string; // 'githubModels' or 'deepSeek'
+    model: string; // 'gpt-4o' or 'deepseek-chat'
+    language: 'en' | 'ne';
     personalizationApplied: boolean;
     contextType: string;
     timestamp: string;
@@ -76,7 +77,12 @@ export interface AIDiagnosisResponse {
 export interface AIWeeklyTipsResponse {
   success: boolean;
   data: {
-    tips: string;
+    tips?: string; // Legacy single language support
+    tipsMultilingual?: {
+      en: string;
+      ne: string;
+    };
+    displayLanguage: 'en' | 'ne';
     userProfile: any;
     userDetails: any;
     seasonalContext: {
@@ -86,37 +92,26 @@ export interface AIWeeklyTipsResponse {
       applicableRegion: string;
     };
   };
-  metadata: any;
+  metadata: {
+    services: {
+      english: {
+        provider: string;
+        model: string;
+        responseTime: number;
+      };
+      nepali: {
+        provider: string;
+        model: string;
+        responseTime: number;
+      };
+    };
+    requestId: string;
+    timestamp: string;
+  };
   analytics: any;
 }
 
-export interface AIServiceStatus {
-  success: boolean;
-  configured: boolean;
-  message: string;
-  service: {
-    name: string;
-    provider: string;
-    model: string;
-    features: string[];
-  };
-  timestamp: string;
-  environment: string;
-}
-
 class AIService {
-  // Check AI service status
-  async getStatus(): Promise<AIServiceStatus> {
-    try {
-      const response = await api.get('/ai/status');
-      return response.data;
-    } catch (error: any) {
-      throw new Error(
-        error.response?.data?.message || 'Failed to get AI service status',
-      );
-    }
-  }
-
   // Get personalized farming advice
   async getAdvice(request: AIAdviceRequest): Promise<AIAdviceResponse> {
     try {
