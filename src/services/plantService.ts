@@ -16,11 +16,16 @@ class PlantService {
   /**
    * Identify a plant from base64 image data
    */
-  async identifyPlant(imageBase64: string): Promise<PlantIdentificationResult> {
+  async identifyPlant(
+    imageBase64: string,
+    language?: string,
+  ): Promise<PlantIdentificationResult> {
     try {
-      const response = await api.post('/plant/identify', {
-        imageBase64,
-      });
+      const payload: any = { imageBase64 };
+      if (language) {
+        payload.language = language;
+      }
+      const response = await api.post('/plant/identify', payload);
 
       return {
         success: true,

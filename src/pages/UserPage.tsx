@@ -47,6 +47,7 @@ import plantService, {
 import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { fetchTTSAudio } from '../services/TTSServices';
+// Translation constants will be handled through i18n
 
 // Helper function to parse agricultural guide content into sections
 const parseAgriculturalGuide = (content: string) => {
@@ -1049,8 +1050,11 @@ const UserPage: React.FC = () => {
       // Convert image to base64
       const base64Image = await plantService.fileToBase64(selectedImage);
 
-      // Call plant identification API
-      const result = await plantService.identifyPlant(base64Image);
+      // Call plant identification API with current language
+      const result = await plantService.identifyPlant(
+        base64Image,
+        i18n.language,
+      );
 
       setPlantResult(result);
       setSelectedGuideSection(''); // Reset selected section for new plant
@@ -1077,12 +1081,16 @@ const UserPage: React.FC = () => {
 
   // Map onboardingStatus to user-friendly label
   const getFarmerLevelLabel = (status: string | undefined) => {
-    if (status === 'I AM NEW TO FARMING') return 'New to Farming';
+    if (!status) return 'N/A';
+
+    // Use translation keys for multilingual support
+    if (status === 'I AM NEW TO FARMING') return t('user.newToFarming');
     if (status === 'I ALREADY HAVE AN ESTABLISHED FARM')
-      return 'Has an Established Farm';
+      return t('user.hasEstablishedFarm');
     if (status === 'I AM LOOKING FOR NEW IDEAS & TRENDS')
-      return 'Looking for ideas';
-    return status || 'N/A';
+      return t('user.lookingForIdeas');
+
+    return status;
   };
 
   // Main content for each nav item
@@ -2069,25 +2077,32 @@ const UserPage: React.FC = () => {
                                             plantResult.data.commonNames
                                               .length > 0 ? (
                                               plantResult.data.commonNames.map(
-                                                (name, index) => (
-                                                  <Chip
-                                                    key={index}
-                                                    label={name}
-                                                    variant='outlined'
-                                                    sx={{
-                                                      fontFamily:
-                                                        'Nunito, sans-serif',
-                                                      fontSize: 14,
-                                                      fontWeight: 500,
-                                                      borderColor: '#4caf50',
-                                                      color: '#2e7d32',
-                                                      '&:hover': {
-                                                        backgroundColor:
-                                                          '#e8f5e8',
-                                                      },
-                                                    }}
-                                                  />
-                                                ),
+                                                (name, index) => {
+                                                  // If Nepali language, translate common names if possible
+                                                  const translatedName =
+                                                    i18n.language === 'ne'
+                                                      ? name // For now, no mapping, so show original
+                                                      : name;
+                                                  return (
+                                                    <Chip
+                                                      key={index}
+                                                      label={translatedName}
+                                                      variant='outlined'
+                                                      sx={{
+                                                        fontFamily:
+                                                          'Nunito, sans-serif',
+                                                        fontSize: 14,
+                                                        fontWeight: 500,
+                                                        borderColor: '#4caf50',
+                                                        color: '#2e7d32',
+                                                        '&:hover': {
+                                                          backgroundColor:
+                                                            '#e8f5e8',
+                                                        },
+                                                      }}
+                                                    />
+                                                  );
+                                                },
                                               )
                                             ) : (
                                               <Typography
