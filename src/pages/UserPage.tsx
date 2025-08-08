@@ -47,6 +47,7 @@ import plantService, {
 import ReactMarkdown from 'react-markdown';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { fetchTTSAudio } from '../services/TTSServices';
+// Translation constants will be handled through i18n
 
 // Helper function to parse agricultural guide content into sections
 const parseAgriculturalGuide = (content: string) => {
@@ -884,7 +885,9 @@ const UserPage: React.FC = () => {
         const response = await aiService.getAdvice({
           question: textToSend,
           userId: user._id,
+          userLanguage: i18n.language as 'en' | 'ne', // Pass current language
         });
+
         // Remove loading message and add AI response
         setMessages(prev => [
           ...prev.slice(0, -1),
@@ -1047,8 +1050,11 @@ const UserPage: React.FC = () => {
       // Convert image to base64
       const base64Image = await plantService.fileToBase64(selectedImage);
 
-      // Call plant identification API
-      const result = await plantService.identifyPlant(base64Image);
+      // Call plant identification API with current language
+      const result = await plantService.identifyPlant(
+        base64Image,
+        i18n.language,
+      );
 
       setPlantResult(result);
       setSelectedGuideSection(''); // Reset selected section for new plant
@@ -1075,12 +1081,16 @@ const UserPage: React.FC = () => {
 
   // Map onboardingStatus to user-friendly label
   const getFarmerLevelLabel = (status: string | undefined) => {
-    if (status === 'I AM NEW TO FARMING') return 'New to Farming';
+    if (!status) return 'N/A';
+
+    // Use translation keys for multilingual support
+    if (status === 'I AM NEW TO FARMING') return t('user.newToFarming');
     if (status === 'I ALREADY HAVE AN ESTABLISHED FARM')
-      return 'Has an Established Farm';
+      return t('user.hasEstablishedFarm');
     if (status === 'I AM LOOKING FOR NEW IDEAS & TRENDS')
-      return 'Looking for ideas';
-    return status || 'N/A';
+      return t('user.lookingForIdeas');
+
+    return status;
   };
 
   // Main content for each nav item
@@ -1592,115 +1602,117 @@ const UserPage: React.FC = () => {
           </>
         )}
         {selectedNav === t('user.message') && (
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: 600,
-              minHeight: 300,
-              bgcolor: 'rgba(255,255,255,0.05)',
-              borderRadius: 3,
-              p: 2,
-              mb: 2,
-              overflowY: 'auto',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
-              variant='h4'
-              sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
-            >
-              {t('user.personalizedMessages')}
-            </Typography>
+          <>
             <Box
               sx={{
                 width: '100%',
-                flex: 1,
-                overflowY: 'auto',
-                bgcolor: 'rgba(0,0,0,0.10)',
-                borderRadius: 2,
+                maxWidth: 600,
+                minHeight: 300,
+                bgcolor: 'rgba(255,255,255,0.05)',
+                borderRadius: 3,
                 p: 2,
-                minHeight: 120,
+                mb: 2,
+                overflowY: 'auto',
+                flex: 1,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
-              {tipsLoading ? (
-                <Typography
-                  sx={{
-                    color: '#bbb',
-                    fontFamily: 'Nunito, sans-serif',
-                    textAlign: 'center',
-                  }}
-                >
-                  {t('user.loadingTips')}
-                </Typography>
-              ) : tipsError ? (
-                <Typography
-                  sx={{
-                    color: 'red',
-                    fontFamily: 'Nunito, sans-serif',
-                    textAlign: 'center',
-                  }}
-                >
-                  {tipsError}
-                </Typography>
-              ) : personalizedTips ? (
-                <Box
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  {personalizedTips
-                    .split(/\n\s*\n/)
-                    .filter(Boolean)
-                    .map((tip, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          color: '#b2ff59',
-                          fontFamily: 'Nunito, sans-serif',
-                          textAlign: 'left',
-                          whiteSpace: 'pre-line',
-                          background: 'rgba(33,65,0,0.85)',
-                          borderRadius: 3,
-                          px: 2,
-                          py: 1,
-                          mb: 1,
-                          boxShadow: 2,
-                          maxWidth: '100%',
-                          '& p': { margin: 0 },
-                          '& ul, & ol': {
-                            paddingLeft: '20px',
-                            margin: '8px 0',
-                          },
-                          '& li': { margin: '4px 0' },
-                        }}
-                      >
-                        <b>{t('user.agroBOT')}:</b>{' '}
-                        <ReactMarkdown>{tip}</ReactMarkdown>
-                      </Box>
-                    ))}
-                </Box>
-              ) : (
-                <Typography
-                  sx={{
-                    color: '#bbb',
-                    fontFamily: 'Nunito, sans-serif',
-                    textAlign: 'center',
-                  }}
-                >
-                  {t('user.noMessages')}
-                </Typography>
-              )}
+              <Typography
+                variant='h4'
+                sx={{ color: 'white', fontFamily: 'Rubik, sans-serif', mb: 2 }}
+              >
+                {t('user.personalizedMessages')}
+              </Typography>
+              <Box
+                sx={{
+                  width: '100%',
+                  flex: 1,
+                  overflowY: 'auto',
+                  bgcolor: 'rgba(0,0,0,0.10)',
+                  borderRadius: 2,
+                  p: 2,
+                  minHeight: 120,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {tipsLoading ? (
+                  <Typography
+                    sx={{
+                      color: '#bbb',
+                      fontFamily: 'Nunito, sans-serif',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('user.loadingTips')}
+                  </Typography>
+                ) : tipsError ? (
+                  <Typography
+                    sx={{
+                      color: 'red',
+                      fontFamily: 'Nunito, sans-serif',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {tipsError}
+                  </Typography>
+                ) : personalizedTips ? (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    {personalizedTips
+                      .split(/\n\s*\n/)
+                      .filter(Boolean)
+                      .map((tip, idx) => (
+                        <Box
+                          key={idx}
+                          sx={{
+                            color: '#b2ff59',
+                            fontFamily: 'Nunito, sans-serif',
+                            textAlign: 'left',
+                            whiteSpace: 'pre-line',
+                            background: 'rgba(33,65,0,0.85)',
+                            borderRadius: 3,
+                            px: 2,
+                            py: 1,
+                            mb: 1,
+                            boxShadow: 2,
+                            maxWidth: '100%',
+                            '& p': { margin: 0 },
+                            '& ul, & ol': {
+                              paddingLeft: '20px',
+                              margin: '8px 0',
+                            },
+                            '& li': { margin: '4px 0' },
+                          }}
+                        >
+                          <b>{t('user.agroBOT')}:</b>{' '}
+                          <ReactMarkdown>{tip}</ReactMarkdown>
+                        </Box>
+                      ))}
+                  </Box>
+                ) : (
+                  <Typography
+                    sx={{
+                      color: '#bbb',
+                      fontFamily: 'Nunito, sans-serif',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('user.noMessages')}
+                  </Typography>
+                )}
+              </Box>
             </Box>
-          </Box>
+          </>
         )}
         {selectedNav === t('user.imageQuery') && (
           <Box
@@ -2065,25 +2077,32 @@ const UserPage: React.FC = () => {
                                             plantResult.data.commonNames
                                               .length > 0 ? (
                                               plantResult.data.commonNames.map(
-                                                (name, index) => (
-                                                  <Chip
-                                                    key={index}
-                                                    label={name}
-                                                    variant='outlined'
-                                                    sx={{
-                                                      fontFamily:
-                                                        'Nunito, sans-serif',
-                                                      fontSize: 14,
-                                                      fontWeight: 500,
-                                                      borderColor: '#4caf50',
-                                                      color: '#2e7d32',
-                                                      '&:hover': {
-                                                        backgroundColor:
-                                                          '#e8f5e8',
-                                                      },
-                                                    }}
-                                                  />
-                                                ),
+                                                (name, index) => {
+                                                  // If Nepali language, translate common names if possible
+                                                  const translatedName =
+                                                    i18n.language === 'ne'
+                                                      ? name // For now, no mapping, so show original
+                                                      : name;
+                                                  return (
+                                                    <Chip
+                                                      key={index}
+                                                      label={translatedName}
+                                                      variant='outlined'
+                                                      sx={{
+                                                        fontFamily:
+                                                          'Nunito, sans-serif',
+                                                        fontSize: 14,
+                                                        fontWeight: 500,
+                                                        borderColor: '#4caf50',
+                                                        color: '#2e7d32',
+                                                        '&:hover': {
+                                                          backgroundColor:
+                                                            '#e8f5e8',
+                                                        },
+                                                      }}
+                                                    />
+                                                  );
+                                                },
                                               )
                                             ) : (
                                               <Typography

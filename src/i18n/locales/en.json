@@ -162,6 +162,24 @@
     "thinking": "AgroBOT is thinking...",
     "error": "Sorry, I couldn't process your request."
   },
+  "ai": {
+    "status": {
+      "title": "AI Services",
+      "loading": "Checking AI services...",
+      "active": "Active",
+      "inactive": "Inactive",
+      "partial_message": "Some AI services are unavailable. You may experience limited functionality for certain languages.",
+      "unavailable_message": "AI services are currently unavailable. Please check your configuration or try again later."
+    },
+    "service": {
+      "english": "English Service",
+      "nepali": "Nepali Service"
+    },
+    "model": {
+      "gpt4_description": "Advanced AI for English content",
+      "deepseek_description": "Specialized AI for Nepali content"
+    }
+  },
   "farmer": "Farmer",
   "logo": "Logo",
   "farmerIllustration": "Farmer"
